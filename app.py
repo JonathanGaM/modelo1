@@ -1,24 +1,42 @@
-from flask import Flask
+from flask import Flask, request, render_template, jsonify
+import joblib
+import pandas as pd
+import logging
 
-# Crear la aplicación Flask
 app = Flask(__name__)
+
+# Configurar el registro
+logging.basicConfig(level=logging.DEBUG)
+
+# Cargar el modelo entrenado
+model = joblib.load('clasificador_insectos.pkl')['modelo']
+app.logger.debug('Modelo cargado correctamente.')
 
 @app.route('/')
 def home():
-    return """
-    <h1>¡Bienvenido a miproyecto_py!</h1>
-    <p>Tu aplicación Flask está funcionando correctamente.</p>
-    <p>Entorno virtual configurado exitosamente.</p>
-    """
+    return render_template('formulario.html')
 
-@app.route('/info')
-def info():
-    return {
-        "proyecto": "miproyecto_py",
-        "framework": "Flask",
-        "entorno": "Entorno virtual Python",
-        "estado": "Funcionando"
-    }
+@app.route('/predict', methods=['POST'])
+def predict():
+    try:
+        # Obtener los datos enviados en el request
+        abdomen = float(request.form['abdomen'])
+        antena = float(request.form['antena'])
+        
+        app.logger.debug(f'Datos recibidos - Abdomen: {abdomen}, Antena: {antena}')
+        
+        # Crear un DataFrame con los datos
+        data_df = pd.DataFrame([[abdomen, antena]], columns=['abdomen', 'antena'])
+        
+        # Realizar predicciones
+        prediction = model.predict(data_df)
+        app.logger.debug(f'Predicción: {prediction[0]}')
+        
+        # Devolver las predicciones como respuesta JSON
+        return jsonify({'categoria': prediction[0]})
+    except Exception as e:
+        app.logger.error(f'Error en la predicción: {str(e)}')
+        return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)
