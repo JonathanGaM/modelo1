@@ -1,211 +1,473 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>🦗 Clasificador de Insectos</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictor de Supervivencia del Titanic</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 10px;
-            font-size: 2.5em;
-        }
-        
-        .subtitle {
-            text-align: center;
-            color: #7f8c8d;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-        
-        .info-box {
-            background: #e8f4fd;
-            border-left: 4px solid #3498db;
-            padding: 15px;
-            margin-bottom: 25px;
-            border-radius: 5px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #2c3e50;
-            font-size: 1.1em;
-        }
-        
-        input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s ease;
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
-        
-        input[type="number"]:focus {
-            border-color: #3498db;
-            outline: none;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-        }
-        
-        button {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-            width: 100%;
-            transition: all 0.3s ease;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.4);
-        }
-        
-        #resultado {
-            margin-top: 25px;
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+            min-height: 100vh;
             padding: 20px;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 30px;
             text-align: center;
-            min-height: 60px;
+            position: relative;
+        }
+
+        .header::before {
+            content: "🚢";
+            font-size: 60px;
+            position: absolute;
+            top: 10px;
+            right: 30px;
+            opacity: 0.3;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .required {
+            color: #ef4444;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .checkbox-group {
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
         }
-        
-        .saltamontes {
-            background: linear-gradient(45deg, #2ecc71, #27ae60);
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #3b82f6;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(45deg, #1e40af, #3b82f6);
             color: white;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
         }
-        
-        .chicharra {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.1rem;
+            display: none;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result.success {
+            background: linear-gradient(45deg, #10b981, #34d399);
             color: white;
+            border: 2px solid #059669;
         }
-        
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+
+        .result.danger {
+            background: linear-gradient(45deg, #ef4444, #f87171);
+            color: white;
+            border: 2px solid #dc2626;
         }
-        
-        .examples {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
+
+        .result.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 2px solid #fecaca;
         }
-        
-        .examples h3 {
-            color: #2c3e50;
+
+        .probability {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 15px 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .details {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .info-section {
+            background: #f0f9ff;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .info-section h3 {
+            color: #1e40af;
             margin-bottom: 10px;
         }
-        
-        .example-item {
-            margin: 5px 0;
-            color: #555;
+
+        .info-section p {
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🦗 Clasificador de Insectos</h1>
-        <p class="subtitle">Sistema de Machine Learning para clasificar saltamontes y chicharras</p>
-        
-        <div class="info-box">
-            <strong>📏 Instrucciones:</strong> Ingresa la longitud del abdomen y de las antenas del insecto (en centímetros) para conocer su clasificación.
+        <div class="header">
+            <h1>🚢 Predictor de Supervivencia del Titanic</h1>
+            <p>Descubre si habrías sobrevivido al naufragio del RMS Titanic</p>
         </div>
-        
-        <form id="formulario" onsubmit="clasificarInsecto(event)">
-            <div class="form-group">
-                <label for="abdomen">🐛 Longitud del Abdomen (cm):</label>
-                <input type="number" id="abdomen" name="abdomen" step="0.1" min="0" max="15" required>
+
+        <div class="form-container">
+            <div id="titanicForm">
+                <div class="form-grid">
+                    <!-- Clase del Ticket -->
+                    <div class="form-group">
+                        <label for="pclass">Clase del Ticket <span class="required">*</span></label>
+                        <select id="pclass" name="pclass" required>
+                            <option value="">Selecciona una clase...</option>
+                            <option value="1">🥇 Primera Clase (Lujo)</option>
+                            <option value="2">🥈 Segunda Clase (Confort)</option>
+                            <option value="3">🥉 Tercera Clase (Básica)</option>
+                        </select>
+                    </div>
+
+                    <!-- Sexo -->
+                    <div class="form-group">
+                        <label for="sex">Sexo <span class="required">*</span></label>
+                        <select id="sex" name="sex" required>
+                            <option value="">Selecciona el sexo...</option>
+                            <option value="male">👨 Hombre</option>
+                            <option value="female">👩 Mujer</option>
+                        </select>
+                    </div>
+
+                    <!-- Edad -->
+                    <div class="form-group">
+                        <label for="age">Edad <span class="required">*</span></label>
+                        <input type="number" id="age" name="age" min="0" max="100" step="1" placeholder="Ej: 25" required>
+                    </div>
+
+                    <!-- Precio del Ticket -->
+                    <div class="form-group">
+                        <label for="fare">Precio del Ticket (£) <span class="required">*</span></label>
+                        <input type="number" id="fare" name="fare" min="0" step="0.01" placeholder="Ej: 15.50" required>
+                    </div>
+
+                    <!-- Puerto de Embarque -->
+                    <div class="form-group">
+                        <label for="embarked">Puerto de Embarque</label>
+                        <select id="embarked" name="embarked">
+                            <option value="S">🇬🇧 Southampton, Inglaterra</option>
+                            <option value="C">🇫🇷 Cherbourg, Francia</option>
+                            <option value="Q">🇮🇪 Queenstown, Irlanda</option>
+                        </select>
+                    </div>
+
+                    <!-- Hermanos/Esposos -->
+                    <div class="form-group">
+                        <label for="sibsp">Hermanos/Esposos a bordo</label>
+                        <input type="number" id="sibsp" name="sibsp" min="0" max="15" value="0" placeholder="0">
+                    </div>
+
+                    <!-- Padres/Hijos -->
+                    <div class="form-group">
+                        <label for="parch">Padres/Hijos a bordo</label>
+                        <input type="number" id="parch" name="parch" min="0" max="15" value="0" placeholder="0">
+                    </div>
+
+                    <!-- Cabina -->
+                    <div class="form-group">
+                        <label for="has_cabin">¿Tenía cabina asignada?</label>
+                        <select id="has_cabin" name="has_cabin">
+                            <option value="false">No</option>
+                            <option value="true">Sí</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="button" class="submit-btn" onclick="predictSurvival()">
+                    🔮 Predecir Supervivencia
+                </button>
+
+                <div class="loading" id="loading">
+                    🔄 Analizando datos...
+                </div>
+
+                <div class="result" id="result">
+                    <!-- Aquí se mostrará el resultado -->
+                </div>
             </div>
-            
-            <div class="form-group">
-                <label for="antena">📡 Longitud de las Antenas (cm):</label>
-                <input type="number" id="antena" name="antena" step="0.1" min="0" max="15" required>
-            </div>
-            
-            <button type="submit">🔍 Clasificar Insecto</button>
-        </form>
-        
-        <div id="resultado"></div>
-        
-        <div class="examples">
-            <h3>🧪 Ejemplos para probar:</h3>
-            <div class="example-item">• <strong>Saltamontes:</strong> Abdomen: 2.7, Antenas: 5.5</div>
-            <div class="example-item">• <strong>Chicharra:</strong> Abdomen: 8.0, Antenas: 9.1</div>
-            <div class="example-item">• <strong>Saltamontes:</strong> Abdomen: 1.1, Antenas: 3.1</div>
         </div>
     </div>
 
     <script>
-        function clasificarInsecto(event) {
-            event.preventDefault();
+        async function predictSurvival() {
+            // Validar campos obligatorios
+            const pclass = document.getElementById('pclass').value;
+            const sex = document.getElementById('sex').value;
+            const age = document.getElementById('age').value;
+            const fare = document.getElementById('fare').value;
+            const sibsp = document.getElementById('sibsp').value;
+            const parch = document.getElementById('parch').value;
+
+            // Validación de campos obligatorios
+            if (!pclass || !sex || !age || !fare) {
+                alert('Por favor, completa todos los campos obligatorios (*)');
+                return;
+            }
+
+            // Validación de rango de edad
+            if (age < 0 || age > 100) {
+                alert('La edad debe estar entre 0 y 100 años');
+                return;
+            }
+
+            // Validación de precio del ticket
+            if (fare <= 0 || fare > 1000) {
+                alert('El precio del ticket debe estar entre 0.01 y 1000 libras');
+                return;
+            }
+
+            // Validación de hermanos/esposos
+            if (sibsp < 0 || sibsp > 15) {
+                alert('El número de hermanos/esposos debe estar entre 0 y 15');
+                return;
+            }
+
+            // Validación de padres/hijos
+            if (parch < 0 || parch > 15) {
+                alert('El número de padres/hijos debe estar entre 0 y 15');
+                return;
+            }
+
+            // Mostrar loading
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const submitBtn = document.querySelector('.submit-btn');
             
-            const abdomen = document.getElementById('abdomen').value;
-            const antena = document.getElementById('antena').value;
-            
-            // Mostrar mensaje de carga
-            document.getElementById('resultado').innerHTML = '🔄 Analizando insecto...';
-            document.getElementById('resultado').className = '';
-            
-            fetch('/predict', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `abdomen=${abdomen}&antena=${antena}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById('resultado').innerHTML = '❌ Error: ' + data.error;
-                    document.getElementById('resultado').className = 'error';
-                } else {
-                    const emoji = data.categoria === 'saltamontes' ? '🦗' : '🦟';
-                    const mensaje = `${emoji} El insecto es: <strong>${data.categoria.toUpperCase()}</strong>`;
-                    
-                    document.getElementById('resultado').innerHTML = mensaje;
-                    document.getElementById('resultado').className = data.categoria;
-                }
-            })
-            .catch(error => {
-                document.getElementById('resultado').innerHTML = '❌ Error en la conexión: ' + error;
-                document.getElementById('resultado').className = 'error';
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = '🔄 Procesando...';
+
+            // Recopilar datos del formulario
+            const formData = {
+                pclass: parseInt(pclass),
+                sex: sex,
+                age: parseFloat(age),
+                fare: parseFloat(fare),
+                embarked: document.getElementById('embarked').value,
+                sibsp: parseInt(document.getElementById('sibsp').value) || 0,
+                parch: parseInt(document.getElementById('parch').value) || 0,
+                has_cabin: document.getElementById('has_cabin').value === 'true'
+            };
+
+            try {
+                // Enviar datos al servidor Python
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                // Mostrar resultado
+                showResult(data);
+
+            } catch (error) {
                 console.error('Error:', error);
-            });
+                showResult({
+                    status: 'error',
+                    mensaje: 'Error de conexión. Intenta nuevamente.',
+                    error: error.message
+                });
+            } finally {
+                // Ocultar loading y restaurar botón
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🔮 Predecir Supervivencia';
+            }
         }
+
+        function showResult(data) {
+            const result = document.getElementById('result');
+            
+            if (data.status === 'success') {
+                const survived = data.sobrevive;
+                const probability = data.probabilidad_supervivencia;
+                
+                result.className = 'result ' + (survived ? 'success' : 'danger');
+                result.innerHTML = `
+                    <div class="probability">
+                        ${survived ? '✅' : '❌'} ${data.mensaje}
+                    </div>
+                `;
+            } else {
+                result.className = 'result error';
+                result.innerHTML = `
+                    <div class="probability">❌ Error en la predicción</div>
+                    <div class="details">
+                        ${data.mensaje || 'Ha ocurrido un error inesperado.'}
+                        ${data.error ? '<br><small>Detalles técnicos: ' + data.error + '</small>' : ''}
+                    </div>
+                `;
+            }
+            
+            result.style.display = 'block';
+            result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Agregar tooltips informativos
+        document.addEventListener('DOMContentLoaded', function() {
+            // Información de precios típicos
+            const fareInput = document.getElementById('fare');
+            const pclassSelect = document.getElementById('pclass');
+            
+            pclassSelect.addEventListener('change', function() {
+                const className = this.value;
+                if (className === '1') {
+                    fareInput.placeholder = 'Ej: 50-500 (Primera clase)';
+                } else if (className === '2') {
+                    fareInput.placeholder = 'Ej: 15-50 (Segunda clase)';
+                } else if (className === '3') {
+                    fareInput.placeholder = 'Ej: 5-25 (Tercera clase)';
+                }
+            });
+        });
     </script>
 </body>
 </html>
