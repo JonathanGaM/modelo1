@@ -57,6 +57,7 @@
             cursor: pointer;
             font-size: 1rem;
             transition: all 0.3s ease;
+            margin-right: 1rem;
         }
         
         .refresh-btn:hover {
@@ -314,10 +315,37 @@
             margin-top: 1rem;
         }
         
+        .connection-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #38a169;
+            animation: pulse 2s infinite;
+        }
+        
+        .connection-dot.error {
+            background: #e53e3e;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
         @media (max-width: 768px) {
             .main-panel { grid-template-columns: 1fr; }
             .members-grid { grid-template-columns: 1fr; }
             .cluster-overview { grid-template-columns: 1fr; }
+            .connection-indicator { flex-direction: column; gap: 0.5rem; text-align: center; }
         }
     </style>
 </head>
@@ -332,9 +360,11 @@
         <div class="ai-section">
             <div class="ai-title">🤖 Análisis en Tiempo Real con Base de Datos</div>
             <div class="ai-subtitle" id="dataInfo">Cargando datos desde base de datos...</div>
-            <button class="refresh-btn" onclick="cargarDatosReales()">
-                🔄 Actualizar Datos
-            </button>
+            <div class="connection-indicator">
+                <div class="connection-dot" id="connectionDot"></div>
+                <span id="lastUpdate">Iniciando...</span>
+            </div>
+            <button class="refresh-btn" onclick="cargarDatosReales(true)">🔄 Actualizar Datos</button>
         </div>
         
         <!-- Stats Overview -->
@@ -414,6 +444,13 @@
                         Sistema basado en datos reales de la base de datos.
                     </div>
                 </div>
+                
+                <div style="background: #bee3f8; border-left: 4px solid #4299e1; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0;">
+                    <div style="color: #2b6cb0; font-weight: bold; margin-bottom: 0.5rem;">🔄 Estado de Actualización</div>
+                    <div style="color: #2c5282; font-size: 0.9rem;" id="dataSourceStatus">
+                        Usando datos simulados
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -483,48 +520,101 @@
             users: [],
             estadisticas: {},
             clusterChart: null,
-            distributionChart: null
+            distributionChart: null,
+            usingRealData: false
         };
         
         // API Base URL - Ahora apunta al mismo servidor
         const API_BASE = '';
         
         // Función principal para cargar datos
-        async function cargarDatosReales() {
+        async function cargarDatosReales(mostrarLoading = true) {
             try {
-                mostrarCargando();
+                if (mostrarLoading) mostrarCargando();
                 
-                // Test de conexión
-                const testResponse = await fetch(`${API_BASE}/api/test-conexion`);
+                // Test de conexión con timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+                
+                const testResponse = await fetch(`${API_BASE}/api/test-conexion`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                
                 if (!testResponse.ok) throw new Error('No se puede conectar al backend');
                 const testData = await testResponse.json();
+                
+                if (!testData.success) throw new Error(testData.error || 'Error en test de conexión');
                 
                 // Cargar estadísticas generales
                 const statsResponse = await fetch(`${API_BASE}/api/estadisticas-generales`);
                 if (!statsResponse.ok) throw new Error('Error al cargar estadísticas');
                 const statsData = await statsResponse.json();
                 
+                if (!statsData.success) throw new Error(statsData.error || 'Error en estadísticas');
+                
                 // Cargar usuarios
                 const usersResponse = await fetch(`${API_BASE}/api/usuarios-basico`);
                 if (!usersResponse.ok) throw new Error('Error al cargar usuarios');
                 const usersData = await usersResponse.json();
                 
+                if (!usersData.success) throw new Error(usersData.error || 'Error en usuarios');
+                
                 // Procesar datos
                 procesarDatos(testData, statsData, usersData);
+                modelData.usingRealData = true;
                 actualizarInterfaz();
-                ocultarCargando();
+                if (mostrarLoading) ocultarCargando();
                 
-                document.getElementById('connectionStatus').textContent = '✅ Conectado a BD';
-                document.getElementById('connectionStatus').style.background = '#38a169';
-                mostrarNotificacion('✅ Datos cargados desde base de datos real', 'success');
+                // Actualizar indicadores de estado
+                actualizarEstadoConexion(true);
+                if (mostrarLoading) {
+                    mostrarNotificacion('✅ Datos cargados desde base de datos real', 'success');
+                }
+                
+                // Actualizar estado de datos
+                document.getElementById('dataSourceStatus').textContent = 
+                    `✅ Usando datos reales • ${new Date().toLocaleTimeString()}`;
                 
             } catch (error) {
                 console.error('Error:', error);
-                ocultarCargando();
-                cargarDatosSimulados();
-                document.getElementById('connectionStatus').textContent = '❌ Sin conexión';
-                document.getElementById('connectionStatus').style.background = '#e53e3e';
-                mostrarNotificacion('⚠️ Error de conexión, usando datos simulados', 'warning');
+                if (mostrarLoading) ocultarCargando();
+                
+                // Si es el primer intento, cargar datos simulados
+                if (!modelData.usingRealData) {
+                    cargarDatosSimulados();
+                    mostrarNotificacion('⚠️ Error de conexión, usando datos simulados', 'warning');
+                } else {
+                    // Si ya teníamos datos reales, solo mostrar error pero mantener datos
+                    if (mostrarLoading) {
+                        mostrarNotificacion('⚠️ Error al actualizar datos, manteniendo última versión', 'warning');
+                    }
+                }
+                
+                // Actualizar indicadores de estado
+                actualizarEstadoConexion(false);
+                
+                // Actualizar estado de datos
+                document.getElementById('dataSourceStatus').textContent = 
+                    `❌ Error de conexión • ${new Date().toLocaleTimeString()}`;
+            }
+        }
+        
+        function actualizarEstadoConexion(conectado) {
+            const status = document.getElementById('connectionStatus');
+            const dot = document.getElementById('connectionDot');
+            const lastUpdate = document.getElementById('lastUpdate');
+            
+            if (conectado) {
+                status.textContent = '✅ Conectado a BD';
+                status.style.background = '#38a169';
+                dot.className = 'connection-dot';
+                lastUpdate.textContent = `Actualizado ${new Date().toLocaleTimeString()}`;
+            } else {
+                status.textContent = '❌ Sin conexión';
+                status.style.background = '#e53e3e';
+                dot.className = 'connection-dot error';
+                lastUpdate.textContent = `Error ${new Date().toLocaleTimeString()}`;
             }
         }
         
@@ -570,15 +660,13 @@
             });
             
             // Actualizar datos globales
-            modelData = {
-                clusters: clusters,
-                users: users,
-                estadisticas: {
-                    total_usuarios: statsData.estadisticas_generales.total_usuarios,
-                    total_registros: testData.total_registros_vista,
-                    usuarios_riesgo: users.filter(u => u.en_riesgo).length,
-                    asistencia_predicha_proxima: users.filter(u => u.probabilidad_asistencia >= 0.7).length
-                }
+            modelData.clusters = clusters;
+            modelData.users = users;
+            modelData.estadisticas = {
+                total_usuarios: statsData.estadisticas_generales.total_usuarios,
+                total_registros: testData.total_registros_vista || statsData.estadisticas_generales.total_registros,
+                usuarios_riesgo: users.filter(u => u.en_riesgo).length,
+                asistencia_predicha_proxima: users.filter(u => u.probabilidad_asistencia >= 0.7).length
             };
         }
         
@@ -592,8 +680,9 @@
             document.getElementById('anomalyCount').textContent = modelData.estadisticas.usuarios_riesgo;
             
             // Actualizar subtítulo
+            const dataType = modelData.usingRealData ? 'reales' : 'simulados';
             document.getElementById('dataInfo').textContent = 
-                `${modelData.estadisticas.total_usuarios} usuarios • ${modelData.estadisticas.total_registros} registros de asistencia`;
+                `${modelData.estadisticas.total_usuarios} usuarios • ${modelData.estadisticas.total_registros} registros • Datos ${dataType}`;
             
             // Actualizar contadores de clusters
             document.getElementById('activistasCount').textContent = modelData.clusters['Activistas Comprometidos'] || 0;
@@ -621,7 +710,10 @@
                 return;
             }
             
-            modelData.users.forEach(user => {
+            // Ordenar usuarios por probabilidad
+            const sortedUsers = [...modelData.users].sort((a, b) => b.probabilidad_asistencia - a.probabilidad_asistencia);
+            
+            sortedUsers.forEach(user => {
                 const memberItem = crearElementoUsuario(user);
                 
                 if (user.probabilidad_asistencia >= 0.7) {
@@ -630,6 +722,14 @@
                     lowList.appendChild(memberItem);
                 }
             });
+            
+            // Si alguna lista está vacía, mostrar mensaje
+            if (highList.children.length === 0) {
+                highList.innerHTML = '<div style="text-align: center; color: #666; padding: 1rem;">No hay usuarios con alta probabilidad</div>';
+            }
+            if (lowList.children.length === 0) {
+                lowList.innerHTML = '<div style="text-align: center; color: #666; padding: 1rem;">Todos los usuarios tienen alta probabilidad</div>';
+            }
         }
         
         function crearElementoUsuario(user) {
@@ -740,21 +840,30 @@
                     { usuario_id: 1, nombre_completo: 'María González', rol: 'Secretaria', cluster: 'Activistas Comprometidos', probabilidad_asistencia: 0.95, probabilidad_texto: '95%', en_riesgo: false, estadisticas: { puntaje_promedio: 2.8, total_reuniones: 45, tasa_asistencia: 0.95, antiguedad_años: 3 } },
                     { usuario_id: 2, nombre_completo: 'Carlos Ruiz', rol: 'Tesorero', cluster: 'Activistas Comprometidos', probabilidad_asistencia: 0.88, probabilidad_texto: '88%', en_riesgo: false, estadisticas: { puntaje_promedio: 2.6, total_reuniones: 38, tasa_asistencia: 0.88, antiguedad_años: 2 } },
                     { usuario_id: 3, nombre_completo: 'Ana López', rol: 'Vocal', cluster: 'Participativos Regulares', probabilidad_asistencia: 0.75, probabilidad_texto: '75%', en_riesgo: false, estadisticas: { puntaje_promedio: 2.2, total_reuniones: 32, tasa_asistencia: 0.75, antiguedad_años: 1.5 } },
-                    { usuario_id: 4, nombre_completo: 'Juan Pérez', rol: 'Agremiado', cluster: 'Inactivos Críticos', probabilidad_asistencia: 0.25, probabilidad_texto: '25%', en_riesgo: true, estadisticas: { puntaje_promedio: 1.1, total_reuniones: 8, tasa_asistencia: 0.25, antiguedad_años: 0.5 } }
+                    { usuario_id: 4, nombre_completo: 'Juan Pérez', rol: 'Agremiado', cluster: 'Inactivos Críticos', probabilidad_asistencia: 0.25, probabilidad_texto: '25%', en_riesgo: true, estadisticas: { puntaje_promedio: 1.1, total_reuniones: 8, tasa_asistencia: 0.25, antiguedad_años: 0.5 } },
+                    { usuario_id: 5, nombre_completo: 'Laura Martínez', rol: 'Vocal', cluster: 'Participativos Regulares', probabilidad_asistencia: 0.82, probabilidad_texto: '82%', en_riesgo: false, estadisticas: { puntaje_promedio: 2.4, total_reuniones: 35, tasa_asistencia: 0.82, antiguedad_años: 2.5 } },
+                    { usuario_id: 6, nombre_completo: 'Roberto Silva', rol: 'Agremiado', cluster: 'Ocasionales Moderados', probabilidad_asistencia: 0.55, probabilidad_texto: '55%', en_riesgo: false, estadisticas: { puntaje_promedio: 1.8, total_reuniones: 22, tasa_asistencia: 0.55, antiguedad_años: 1 } }
                 ],
                 estadisticas: {
                     total_usuarios: 113,
                     total_registros: 1130,
                     usuarios_riesgo: 8,
                     asistencia_predicha_proxima: 22
-                }
+                },
+                usingRealData: false
             };
             
             actualizarInterfaz();
+            
+            // Actualizar estado de datos
+            document.getElementById('dataSourceStatus').textContent = 
+                `⚠️ Usando datos simulados • Sin conexión a BD`;
         }
         
         // Funciones de interfaz
         function mostrarDetalleUsuario(user) {
+            const dataSource = modelData.usingRealData ? 'Base de Datos Real' : 'Datos Simulados';
+            
             alert(`👤 ANÁLISIS DEL USUARIO\n\n` +
                   `📋 ${user.nombre_completo}\n` +
                   `🏷️ ${user.rol}\n\n` +
@@ -765,33 +874,39 @@
                   `• Puntaje Promedio: ${user.estadisticas.puntaje_promedio}\n` +
                   `• Total Reuniones: ${user.estadisticas.total_reuniones}\n` +
                   `• Tasa Asistencia: ${(user.estadisticas.tasa_asistencia * 100).toFixed(1)}%\n` +
-                  `• Antigüedad: ${user.estadisticas.antiguedad_años} años`);
+                  `• Antigüedad: ${user.estadisticas.antiguedad_años} años\n\n` +
+                  `🔍 Fuente: ${dataSource}`);
         }
         
         function mostrarClusterDetalle(clusterNombre) {
             const usuarios = modelData.users.filter(u => u.cluster === clusterNombre);
-            const promedioProb = usuarios.reduce((sum, u) => sum + u.probabilidad_asistencia, 0) / usuarios.length;
+            const promedioProb = usuarios.length > 0 ? usuarios.reduce((sum, u) => sum + u.probabilidad_asistencia, 0) / usuarios.length : 0;
             
             alert(`🎯 DETALLE DEL CLUSTER: ${clusterNombre}\n\n` +
                   `👥 Total usuarios: ${usuarios.length}\n` +
                   `📊 Probabilidad promedio: ${(promedioProb * 100).toFixed(1)}%\n` +
                   `🚨 Usuarios en riesgo: ${usuarios.filter(u => u.en_riesgo).length}\n\n` +
                   `📋 Primeros usuarios:\n` +
-                  usuarios.slice(0, 5).map(u => `• ${u.nombre_completo} (${u.probabilidad_texto})`).join('\n'));
+                  usuarios.slice(0, 5).map(u => `• ${u.nombre_completo} (${u.probabilidad_texto})`).join('\n') +
+                  (usuarios.length > 5 ? `\n... y ${usuarios.length - 5} más` : ''));
         }
         
         function enviarRecordatorios() {
             const usuariosRiesgo = modelData.users.filter(u => u.en_riesgo);
+            const dataSource = modelData.usingRealData ? 'base de datos real' : 'datos simulados';
+            
             alert(`📧 RECORDATORIOS ENVIADOS\n\n` +
                   `✅ ${usuariosRiesgo.length} recordatorios enviados a usuarios en riesgo\n` +
                   `📱 Canales: SMS + Email + WhatsApp\n` +
                   `🎯 Mensajes personalizados según cluster\n` +
-                  `🕐 Estimado de entrega: 5-10 minutos`);
+                  `🕐 Estimado de entrega: 5-10 minutos\n\n` +
+                  `📊 Análisis basado en: ${dataSource}`);
         }
         
         function exportarDatos() {
+            const dataSource = modelData.usingRealData ? 'BD_Real' : 'Simulados';
             const csvContent = [
-                ['Usuario ID', 'Nombre', 'Rol', 'Cluster', 'Probabilidad', 'En Riesgo', 'Puntaje', 'Reuniones', 'Tasa Asistencia'],
+                ['Usuario ID', 'Nombre', 'Rol', 'Cluster', 'Probabilidad', 'En Riesgo', 'Puntaje', 'Reuniones', 'Tasa Asistencia', 'Fuente'],
                 ...modelData.users.map(u => [
                     u.usuario_id,
                     u.nombre_completo,
@@ -801,7 +916,8 @@
                     u.en_riesgo ? 'SÍ' : 'NO',
                     u.estadisticas.puntaje_promedio,
                     u.estadisticas.total_reuniones,
-                    `${(u.estadisticas.tasa_asistencia * 100).toFixed(1)}%`
+                    `${(u.estadisticas.tasa_asistencia * 100).toFixed(1)}%`,
+                    dataSource
                 ])
             ].map(row => row.join(',')).join('\n');
             
@@ -809,7 +925,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `sututeh_usuarios_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `sututeh_usuarios_${dataSource}_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
             window.URL.revokeObjectURL(url);
             
@@ -838,7 +954,8 @@
                   `• Menos de 5 reuniones\n` +
                   `• Tasa de asistencia < 30%\n` +
                   `• Puntaje promedio bajo\n\n` +
-                  `💡 Recomendación: Contacto personalizado urgente`);
+                  `💡 Recomendación: Contacto personalizado urgente\n\n` +
+                  `📊 Análisis basado en: ${modelData.usingRealData ? 'Base de datos real' : 'Datos simulados'}`);
         }
         
         function mostrarCargando() {
@@ -871,6 +988,7 @@
                 transform: translateX(400px);
                 transition: transform 0.3s ease;
                 max-width: 400px;
+                font-size: 0.9rem;
             `;
             toast.textContent = mensaje;
             
@@ -879,21 +997,21 @@
             setTimeout(() => toast.style.transform = 'translateX(0)', 100);
             setTimeout(() => {
                 toast.style.transform = 'translateX(400px)';
-                setTimeout(() => document.body.removeChild(toast), 300);
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
             }, 4000);
         }
         
         // Inicialización
         window.addEventListener('load', function() {
+            console.log('🚀 SUTUTEH Sistema iniciado');
+            
+            // Intentar cargar datos reales al inicio
             cargarDatosReales();
         });
-        
-        // Auto-refresh cada 30 segundos
-        setInterval(() => {
-            if (document.getElementById('connectionStatus').textContent.includes('✅')) {
-                cargarDatosReales();
-            }
-        }, 30000);
     </script>
 </body>
 </html>
