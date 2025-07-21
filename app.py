@@ -1,4 +1,4 @@
-# app.py - Backend Python SIMPLE para cargar datos SUTUTEH
+# app.py - Backend Python CORREGIDO PARA RENDER
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import mysql.connector
@@ -7,44 +7,186 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
-load_dotenv()
+# Cargar variables de entorno solo si existe el archivo .env (desarrollo local)
+if os.path.exists('.env'):
+    load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Permitir CORS para todas las rutas
 
-# Configuración de la base de datos
+# Configuración de la base de datos SIN valores por defecto problemáticos
 DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
+    'host': os.getenv('DB_HOST'),           # Sin default 'localhost'
     'port': int(os.getenv('DB_PORT', 3306)),
-    'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', ''),
-    'database': os.getenv('DB_NAME', 'dbsututeh'),
-    'charset': 'utf8mb4'
+    'user': os.getenv('DB_USER'),           # Sin default 'root'
+    'password': os.getenv('DB_PASSWORD'),   # Sin default vacío
+    'database': os.getenv('DB_NAME'),       # Sin default
+    'charset': 'utf8mb4',
+    'connect_timeout': 30,                  # Timeout mayor para conexiones remotas
+    'autocommit': True                      # Para evitar problemas de transacciones
 }
 
 def conectar_bd():
-    """Crear conexión a la base de datos"""
+    """Crear conexión a la base de datos con mejor manejo de errores"""
     try:
-        return mysql.connector.connect(**DB_CONFIG)
+        # Verificar que todas las variables estén configuradas
+        required_vars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME']
+        missing_vars = [var for var in required_vars if not os.getenv(var)]
+        
+        if missing_vars:
+            print(f"❌ ERROR: Variables de entorno faltantes: {missing_vars}")
+            print("💡 Configúralas en Render Dashboard → Environment Variables")
+            return None
+        
+        print(f"🔗 Conectando a BD:")
+        print(f"   Host: {DB_CONFIG['host']}")
+        print(f"   Puerto: {DB_CONFIG['port']}")  
+        print(f"   Usuario: {DB_CONFIG['user']}")
+        print(f"   Base de datos: {DB_CONFIG['database']}")
+        
+        conn = mysql.connector.connect(**DB_CONFIG)
+        print("✅ Conexión a BD exitosa")
+        return conn
+        
+    except mysql.connector.Error as err:
+        print(f"❌ Error MySQL específico: {err}")
+        print(f"❌ Código de error: {err.errno}")
+        return None
     except Exception as e:
-        print(f"Error conectando a BD: {e}")
+        print(f"❌ Error general conectando a BD: {e}")
+        print(f"❌ Tipo de error: {type(e)}")
         return None
 
 # Leer el archivo HTML desde templates
 @app.route('/')
 def index():
     """Servir la página principal HTML desde templates"""
-    return render_template('formulario.html')
+    try:
+        return render_template('formulario.html')
+    except Exception as e:
+        # Si no encuentra el template, devolver HTML básico con diagnóstico
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>SUTUTEH - Backend Diagnóstico</title>
+            <meta charset="utf-8">
+        </head>
+        <body>
+            <h1>🚀 Backend Python SUTUTEH</h1>
+            <h2>Estado del Sistema:</h2>
+            <div id="status">
+                <p><strong>Servidor:</strong> ✅ Funcionando</p>
+                <p><strong>Template:</strong> ❌ No encontrado (formulario.html)</p>
+                <p><strong>Error:</strong> {e}</p>
+            </div>
+            
+            <h2>🔧 Pruebas de API:</h2>
+            <button onclick="testStatus()">Test Status</button>
+            <button onclick="testConexion()">Test BD Conexión</button>
+            <button onclick="testUsuarios()">Test Usuarios</button>
+            
+            <div id="resultados" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;">
+                <p>Resultados aparecerán aquí...</p>
+            </div>
+
+            <script>
+                function mostrarResultado(data) {{
+                    document.getElementById('resultados').innerHTML = 
+                        '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }}
+                
+                function testStatus() {{
+                    fetch('/api/status')
+                        .then(response => response.json())
+                        .then(data => mostrarResultado(data))
+                        .catch(error => mostrarResultado({{'error': error.toString()}}));
+                }}
+                
+                function testConexion() {{
+                    fetch('/api/test-conexion')
+                        .then(response => response.json())
+                        .then(data => mostrarResultado(data))
+                        .catch(error => mostrarResultado({{'error': error.toString()}}));
+                }}
+                
+                function testUsuarios() {{
+                    fetch('/api/usuarios-basico')
+                        .then(response => response.json())
+                        .then(data => mostrarResultado(data))
+                        .catch(error => mostrarResultado({{'error': error.toString()}}));
+                }}
+            </script>
+        </body>
+        </html>
+        """
 
 @app.route('/api/status')
 def api_status():
-    """Endpoint de estado del API"""
+    """Endpoint de estado del API con información de entorno"""
+    env_vars_status = {}
+    required_vars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'DB_PORT']
+    
+    for var in required_vars:
+        value = os.getenv(var)
+        if var == 'DB_PASSWORD':
+            env_vars_status[var] = "✅ Configurada" if value else "❌ Faltante"
+        else:
+            env_vars_status[var] = value if value else "❌ Faltante"
+    
     return jsonify({
-        'message': 'Backend Python SIMPLE SUTUTEH',
+        'message': 'Backend Python SUTUTEH para Render',
         'status': 'running',
+        'environment': 'production' if os.getenv('NODE_ENV') == 'production' else 'development',
+        'variables_entorno': env_vars_status,
         'timestamp': datetime.now().isoformat()
     })
+
+@app.route('/api/test-conexion')
+def test_conexion():
+    """Probar conexión a la base de datos con diagnóstico detallado"""
+    try:
+        # Mostrar configuración (sin contraseña)
+        config_display = {
+            'host': DB_CONFIG.get('host', 'NO_CONFIGURADO'),
+            'port': DB_CONFIG.get('port', 'NO_CONFIGURADO'),
+            'user': DB_CONFIG.get('user', 'NO_CONFIGURADO'),
+            'database': DB_CONFIG.get('database', 'NO_CONFIGURADO'),
+            'password_configured': bool(DB_CONFIG.get('password'))
+        }
+        
+        conn = conectar_bd()
+        if not conn:
+            return jsonify({
+                'success': False,
+                'error': 'No se pudo conectar a la base de datos',
+                'configuracion': config_display,
+                'sugerencia': 'Verifica las variables de entorno en Render Dashboard'
+            }), 500
+        
+        # Probar consulta simple
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) as total FROM vw_dataset_asistencia")
+        resultado = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Conexión exitosa a la base de datos',
+            'total_registros_vista': resultado[0],
+            'configuracion': config_display,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Error de conexión: {str(e)}',
+            'configuracion': config_display,
+            'timestamp': datetime.now().isoformat()
+        }), 500
 
 @app.route('/api/dataset-completo')
 def get_dataset_completo():
@@ -278,57 +420,17 @@ def get_estadisticas_generales():
             'error': f'Error al obtener estadísticas: {str(e)}'
         }), 500
 
-@app.route('/api/test-conexion')
-def test_conexion():
-    """Probar conexión a la base de datos"""
-    try:
-        conn = conectar_bd()
-        if not conn:
-            return jsonify({
-                'success': False,
-                'error': 'No se pudo conectar a la base de datos',
-                'config_usada': {
-                    'host': DB_CONFIG['host'],
-                    'port': DB_CONFIG['port'],
-                    'user': DB_CONFIG['user'],
-                    'database': DB_CONFIG['database']
-                }
-            }), 500
-        
-        # Probar consulta simple
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) as total FROM vw_dataset_asistencia")
-        resultado = cursor.fetchone()
-        
-        cursor.close()
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Conexión exitosa',
-            'total_registros_vista': resultado[0],
-            'timestamp': datetime.now().isoformat()
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Error de conexión: {str(e)}',
-            'config_usada': {
-                'host': DB_CONFIG['host'],
-                'port': DB_CONFIG['port'],
-                'user': DB_CONFIG['user'],
-                'database': DB_CONFIG['database']
-            }
-        }), 500
-
 if __name__ == '__main__':
-    print("🚀 Iniciando Backend Python SIMPLE SUTUTEH...")
-    print(f"📊 Configuración BD:")
-    print(f"   Host: {DB_CONFIG['host']}")
-    print(f"   Puerto: {DB_CONFIG['port']}")
-    print(f"   Usuario: {DB_CONFIG['user']}")
-    print(f"   Base de datos: {DB_CONFIG['database']}")
+    print("🚀 Iniciando Backend Python SUTUTEH...")
+    
+    # Mostrar configuración de entorno
+    print(f"📊 Variables de entorno:")
+    env_vars = ['DB_HOST', 'DB_USER', 'DB_NAME', 'DB_PORT']
+    for var in env_vars:
+        value = os.getenv(var)
+        print(f"   {var}: {value if value else '❌ NO CONFIGURADO'}")
+    
+    print(f"   DB_PASSWORD: {'✅ Configurado' if os.getenv('DB_PASSWORD') else '❌ NO CONFIGURADO'}")
     
     # Probar conexión al iniciar
     conn_test = conectar_bd()
@@ -344,9 +446,18 @@ if __name__ == '__main__':
             print(f"⚠️ Error probando vista: {e}")
         conn_test.close()
     else:
-        print("❌ Error de conexión a base de datos")
+        print("❌ Error de conexión a base de datos - Revisa las variables de entorno")
     
-    print("🌐 Aplicación web disponible en http://localhost:5000")
-    print("🔗 API endpoints en http://localhost:5000/api/")
+    # Configurar puerto dinámico para Render
+    port = int(os.environ.get('PORT', 5000))
+    print(f"🌐 Aplicación web disponible en puerto: {port}")
+    print("🔗 API endpoints disponibles:")
+    print("   /api/status")
+    print("   /api/test-conexion")
+    print("   /api/usuarios-basico")
+    print("   /api/dataset-completo")
+    print("   /api/estadisticas-generales")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Para producción, debug=False
+    debug_mode = os.getenv('NODE_ENV') != 'production'
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
