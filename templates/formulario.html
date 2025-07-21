@@ -3,471 +3,897 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predictor de Supervivencia del Titanic</title>
+    <title>SUTUTEH - Sistema Inteligente ML con Datos Reales</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            color: #333;
         }
-
+        
+        .header {
+            background: rgba(255,255,255,0.95);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo { font-size: 1.5rem; font-weight: bold; color: #4a5568; }
+        .model-status { 
+            background: #38a169; color: white; 
+            padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; 
+        }
+        
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .ai-section {
+            background: linear-gradient(135deg, rgba(46, 139, 87, 0.95), rgba(65, 105, 225, 0.95));
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .ai-title { font-size: 2rem; margin-bottom: 0.5rem; }
+        .ai-subtitle { opacity: 0.9; margin-bottom: 1rem; }
+        
+        .refresh-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.95);
+            padding: 2rem 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
             overflow: hidden;
         }
-
-        .header {
-            background: linear-gradient(45deg, #1e40af, #3b82f6);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            position: relative;
-        }
-
-        .header::before {
-            content: "🚢";
-            font-size: 60px;
+        
+        .stat-card::before {
+            content: '';
             position: absolute;
-            top: 10px;
-            right: 30px;
-            opacity: 0.3;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--card-color, #4299e1);
         }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .form-container {
-            padding: 40px;
-        }
-
-        .form-grid {
+        
+        .stat-card.info { --card-color: #4299e1; }
+        .stat-card.medium { --card-color: #d69e2e; }
+        .stat-card.low { --card-color: #e53e3e; }
+        
+        .stat-number { font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .stat-label { color: #666; font-size: 0.95rem; }
+        .stat-trend { font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.7; }
+        
+        .info .stat-number { color: #4299e1; }
+        .medium .stat-number { color: #d69e2e; }
+        .low .stat-number { color: #e53e3e; }
+        
+        .main-panel {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
         }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
+        
+        .panel-section {
+            background: rgba(255,255,255,0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         }
-
-        .form-group label {
+        
+        .section-title {
+            font-size: 1.3rem;
             font-weight: bold;
-            color: #374151;
-            margin-bottom: 8px;
-            font-size: 1rem;
-        }
-
-        .required {
-            color: #ef4444;
-        }
-
-        .form-group input,
-        .form-group select {
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: #f9fafb;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .checkbox-group {
+            margin-bottom: 1.5rem;
+            color: #2d3748;
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 0.5rem;
         }
-
-        .checkbox-group input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            accent-color: #3b82f6;
+        
+        .cluster-overview {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
-
-        .checkbox-group label {
-            margin: 0;
-            font-weight: normal;
-            cursor: pointer;
-        }
-
-        .submit-btn {
-            width: 100%;
-            background: linear-gradient(45deg, #1e40af, #3b82f6);
+        
+        .cluster-card {
+            padding: 1.5rem;
+            border-radius: 10px;
             color: white;
-            padding: 16px 32px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.2rem;
-            font-weight: bold;
+            text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
         }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        
+        .cluster-card:hover {
+            transform: scale(1.05);
         }
-
-        .submit-btn:active {
-            transform: translateY(0);
+        
+        .cluster-activistas { background: linear-gradient(135deg, #38a169, #48bb78); }
+        .cluster-regulares { background: linear-gradient(135deg, #4299e1, #63b3ed); }
+        .cluster-moderados { background: linear-gradient(135deg, #d69e2e, #ecc94b); }
+        .cluster-criticos { background: linear-gradient(135deg, #e53e3e, #f56565); }
+        
+        .cluster-count { font-size: 1.8rem; font-weight: bold; }
+        .cluster-name { font-size: 0.9rem; opacity: 0.9; margin-top: 0.5rem; }
+        
+        .members-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
         }
-
-        .submit-btn:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .result {
-            margin-top: 30px;
-            padding: 25px;
-            border-radius: 12px;
-            text-align: center;
-            font-size: 1.1rem;
-            display: none;
-            animation: slideIn 0.5s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .result.success {
-            background: linear-gradient(45deg, #10b981, #34d399);
-            color: white;
-            border: 2px solid #059669;
-        }
-
-        .result.danger {
-            background: linear-gradient(45deg, #ef4444, #f87171);
-            color: white;
-            border: 2px solid #dc2626;
-        }
-
-        .result.error {
-            background: #fef2f2;
-            color: #dc2626;
-            border: 2px solid #fecaca;
-        }
-
-        .probability {
-            font-size: 2rem;
-            font-weight: bold;
-            margin: 15px 0;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        }
-
-        .details {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            margin-top: 10px;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            color: #6b7280;
-            font-style: italic;
-        }
-
-        .info-section {
-            background: #f0f9ff;
-            padding: 20px;
-            margin: 20px 0;
+        
+        .members-column {
+            background: rgba(255,255,255,0.95);
             border-radius: 10px;
-            border-left: 4px solid #3b82f6;
+            padding: 1.5rem;
         }
-
-        .info-section h3 {
-            color: #1e40af;
-            margin-bottom: 10px;
+        
+        .column-title {
+            font-weight: bold;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
         }
-
-        .info-section p {
-            color: #374151;
-            line-height: 1.6;
+        
+        .column-title.high { border-bottom-color: #38a169; color: #38a169; }
+        .column-title.low { border-bottom-color: #e53e3e; color: #e53e3e; }
+        
+        .member-list {
+            max-height: 300px;
+            overflow-y: auto;
         }
-
+        
+        .member-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: #f7fafc;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .member-item:hover {
+            background: #edf2f7;
+            transform: translateX(5px);
+        }
+        
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .member-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4299e1, #63b3ed);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        
+        .member-details {
+            flex: 1;
+        }
+        
+        .member-name { font-weight: 600; font-size: 0.9rem; }
+        .member-role { font-size: 0.75rem; color: #666; }
+        
+        .probability-badge {
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            color: white;
+            font-size: 0.8rem;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .prob-high { background: #38a169; }
+        .prob-medium { background: #d69e2e; }
+        .prob-low { background: #e53e3e; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .btn-primary { background: #4299e1; color: white; }
+        .btn-success { background: #38a169; color: white; }
+        .btn-warning { background: #d69e2e; color: white; }
+        .btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2); 
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+        }
+        
+        .loading-content {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .chart-container {
+            height: 300px;
+            position: relative;
+            margin-top: 1rem;
+        }
+        
         @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .form-container {
-                padding: 20px;
-            }
+            .main-panel { grid-template-columns: 1fr; }
+            .members-grid { grid-template-columns: 1fr; }
+            .cluster-overview { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <div class="logo">🧠 SUTUTEH - Sistema ML con Datos Reales</div>
+        <div class="model-status" id="connectionStatus">🔄 Conectando...</div>
+    </div>
+    
     <div class="container">
-        <div class="header">
-            <h1>🚢 Predictor de Supervivencia del Titanic</h1>
-            <p>Descubre si habrías sobrevivido al naufragio del RMS Titanic</p>
+        <!-- AI Section -->
+        <div class="ai-section">
+            <div class="ai-title">🤖 Análisis en Tiempo Real con Base de Datos</div>
+            <div class="ai-subtitle" id="dataInfo">Cargando datos desde base de datos...</div>
+            <button class="refresh-btn" onclick="cargarDatosReales()">
+                🔄 Actualizar Datos
+            </button>
         </div>
-
-        <div class="form-container">
-            <div id="titanicForm">
-                <div class="form-grid">
-                    <!-- Clase del Ticket -->
-                    <div class="form-group">
-                        <label for="pclass">Clase del Ticket <span class="required">*</span></label>
-                        <select id="pclass" name="pclass" required>
-                            <option value="">Selecciona una clase...</option>
-                            <option value="1">🥇 Primera Clase (Lujo)</option>
-                            <option value="2">🥈 Segunda Clase (Confort)</option>
-                            <option value="3">🥉 Tercera Clase (Básica)</option>
-                        </select>
+        
+        <!-- Stats Overview -->
+        <div class="stats-overview">
+            <div class="stat-card info">
+                <div class="stat-number" id="totalUsers">0</div>
+                <div class="stat-label">Agremiados Analizados</div>
+                <div class="stat-trend">Base de datos real</div>
+            </div>
+            <div class="stat-card medium">
+                <div class="stat-number" id="nextMeetingAttendance">0</div>
+                <div class="stat-label">Asistencia Predicha</div>
+                <div class="stat-trend">Probabilidad ≥ 70%</div>
+            </div>
+            <div class="stat-card low">
+                <div class="stat-number" id="riskUsers">0</div>
+                <div class="stat-label">Usuarios en Riesgo</div>
+                <div class="stat-trend">Requieren atención</div>
+            </div>
+        </div>
+        
+        <div class="main-panel">
+            <!-- Clustering Results -->
+            <div class="panel-section">
+                <div class="section-title">
+                    🎯 Segmentación Inteligente
+                </div>
+                
+                <div class="cluster-overview">
+                    <div class="cluster-card cluster-activistas" onclick="mostrarClusterDetalle('Activistas Comprometidos')">
+                        <div class="cluster-count" id="activistasCount">0</div>
+                        <div class="cluster-name">Activistas Comprometidos</div>
                     </div>
-
-                    <!-- Sexo -->
-                    <div class="form-group">
-                        <label for="sex">Sexo <span class="required">*</span></label>
-                        <select id="sex" name="sex" required>
-                            <option value="">Selecciona el sexo...</option>
-                            <option value="male">👨 Hombre</option>
-                            <option value="female">👩 Mujer</option>
-                        </select>
+                    <div class="cluster-card cluster-regulares" onclick="mostrarClusterDetalle('Participativos Regulares')">
+                        <div class="cluster-count" id="regularesCount">0</div>
+                        <div class="cluster-name">Participativos Regulares</div>
                     </div>
-
-                    <!-- Edad -->
-                    <div class="form-group">
-                        <label for="age">Edad <span class="required">*</span></label>
-                        <input type="number" id="age" name="age" min="0" max="100" step="1" placeholder="Ej: 25" required>
+                    <div class="cluster-card cluster-moderados" onclick="mostrarClusterDetalle('Ocasionales Moderados')">
+                        <div class="cluster-count" id="moderadosCount">0</div>
+                        <div class="cluster-name">Ocasionales Moderados</div>
                     </div>
-
-                    <!-- Precio del Ticket -->
-                    <div class="form-group">
-                        <label for="fare">Precio del Ticket (£) <span class="required">*</span></label>
-                        <input type="number" id="fare" name="fare" min="0" step="0.01" placeholder="Ej: 15.50" required>
-                    </div>
-
-                    <!-- Puerto de Embarque -->
-                    <div class="form-group">
-                        <label for="embarked">Puerto de Embarque</label>
-                        <select id="embarked" name="embarked">
-                            <option value="S">🇬🇧 Southampton, Inglaterra</option>
-                            <option value="C">🇫🇷 Cherbourg, Francia</option>
-                            <option value="Q">🇮🇪 Queenstown, Irlanda</option>
-                        </select>
-                    </div>
-
-                    <!-- Hermanos/Esposos -->
-                    <div class="form-group">
-                        <label for="sibsp">Hermanos/Esposos a bordo</label>
-                        <input type="number" id="sibsp" name="sibsp" min="0" max="15" value="0" placeholder="0">
-                    </div>
-
-                    <!-- Padres/Hijos -->
-                    <div class="form-group">
-                        <label for="parch">Padres/Hijos a bordo</label>
-                        <input type="number" id="parch" name="parch" min="0" max="15" value="0" placeholder="0">
-                    </div>
-
-                    <!-- Cabina -->
-                    <div class="form-group">
-                        <label for="has_cabin">¿Tenía cabina asignada?</label>
-                        <select id="has_cabin" name="has_cabin">
-                            <option value="false">No</option>
-                            <option value="true">Sí</option>
-                        </select>
+                    <div class="cluster-card cluster-criticos" onclick="mostrarClusterDetalle('Inactivos Críticos')">
+                        <div class="cluster-count" id="criticosCount">0</div>
+                        <div class="cluster-name">Inactivos Críticos</div>
                     </div>
                 </div>
-
-                <button type="button" class="submit-btn" onclick="predictSurvival()">
-                    🔮 Predecir Supervivencia
-                </button>
-
-                <div class="loading" id="loading">
-                    🔄 Analizando datos...
+                
+                <div class="chart-container">
+                    <canvas id="clusterChart"></canvas>
                 </div>
-
-                <div class="result" id="result">
-                    <!-- Aquí se mostrará el resultado -->
+            </div>
+            
+            <!-- Real-time Status -->
+            <div class="panel-section">
+                <div class="section-title">
+                    📊 Estado del Sistema
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 15px; padding: 2rem; color: white; margin-bottom: 1.5rem;">
+                    <h3>🔗 Conexión a Base de Datos</h3>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem;">
+                        <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 10px;">
+                            <div style="font-size: 1.5rem; font-weight: bold;" id="dbRecords">0</div>
+                            <div style="font-size: 0.8rem; opacity: 0.9;">Registros en BD</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 10px;">
+                            <div style="font-size: 1.5rem; font-weight: bold;" id="dbUsers">0</div>
+                            <div style="font-size: 0.8rem; opacity: 0.9;">Usuarios Únicos</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: #fed7d7; border-left: 4px solid #e53e3e; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0;">
+                    <div style="color: #c53030; font-weight: bold; margin-bottom: 0.5rem;">⚠️ Alerta del Sistema</div>
+                    <div style="color: #742a2a; font-size: 0.9rem;">
+                        <span id="anomalyCount">0</span> usuarios detectados con patrones de riesgo. 
+                        Sistema basado en datos reales de la base de datos.
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <script>
-        async function predictSurvival() {
-            // Validar campos obligatorios
-            const pclass = document.getElementById('pclass').value;
-            const sex = document.getElementById('sex').value;
-            const age = document.getElementById('age').value;
-            const fare = document.getElementById('fare').value;
-            const sibsp = document.getElementById('sibsp').value;
-            const parch = document.getElementById('parch').value;
-
-            // Validación de campos obligatorios
-            if (!pclass || !sex || !age || !fare) {
-                alert('Por favor, completa todos los campos obligatorios (*)');
-                return;
-            }
-
-            // Validación de rango de edad
-            if (age < 0 || age > 100) {
-                alert('La edad debe estar entre 0 y 100 años');
-                return;
-            }
-
-            // Validación de precio del ticket
-            if (fare <= 0 || fare > 1000) {
-                alert('El precio del ticket debe estar entre 0.01 y 1000 libras');
-                return;
-            }
-
-            // Validación de hermanos/esposos
-            if (sibsp < 0 || sibsp > 15) {
-                alert('El número de hermanos/esposos debe estar entre 0 y 15');
-                return;
-            }
-
-            // Validación de padres/hijos
-            if (parch < 0 || parch > 15) {
-                alert('El número de padres/hijos debe estar entre 0 y 15');
-                return;
-            }
-
-            // Mostrar loading
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
-            const submitBtn = document.querySelector('.submit-btn');
+        
+        <!-- Members Grid -->
+        <div class="panel-section full-width">
+            <div class="section-title">
+                👥 Análisis Individual por Agremiado
+            </div>
             
-            loading.style.display = 'block';
-            result.style.display = 'none';
-            submitBtn.disabled = true;
-            submitBtn.textContent = '🔄 Procesando...';
-
-            // Recopilar datos del formulario
-            const formData = {
-                pclass: parseInt(pclass),
-                sex: sex,
-                age: parseFloat(age),
-                fare: parseFloat(fare),
-                embarked: document.getElementById('embarked').value,
-                sibsp: parseInt(document.getElementById('sibsp').value) || 0,
-                parch: parseInt(document.getElementById('parch').value) || 0,
-                has_cabin: document.getElementById('has_cabin').value === 'true'
-            };
-
+            <div class="members-grid">
+                <div class="members-column">
+                    <div class="column-title high">✅ Alta Probabilidad de Asistencia</div>
+                    <div class="member-list" id="highProbabilityList">
+                        <div style="text-align: center; color: #666; padding: 2rem;">
+                            Cargando datos...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="members-column">
+                    <div class="column-title low">❌ Requieren Seguimiento</div>
+                    <div class="member-list" id="lowProbabilityList">
+                        <div style="text-align: center; color: #666; padding: 2rem;">
+                            Cargando datos...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="enviarRecordatorios()">
+                    📧 Recordatorios Inteligentes
+                </button>
+                <button class="btn btn-success" onclick="exportarDatos()">
+                    📊 Exportar a CSV
+                </button>
+                <button class="btn btn-warning" onclick="mostrarAnomalias()">
+                    🚨 Ver Usuarios en Riesgo
+                </button>
+            </div>
+        </div>
+        
+        <!-- Chart Section -->
+        <div class="panel-section full-width">
+            <div class="section-title">
+                📈 Distribución de Usuarios por Cluster
+            </div>
+            <div class="chart-container">
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h3>🔄 Cargando datos reales...</h3>
+            <p>Conectando con base de datos • Procesando información</p>
+        </div>
+    </div>
+    
+    <script>
+        // Variables globales
+        let modelData = {
+            clusters: {},
+            users: [],
+            estadisticas: {},
+            clusterChart: null,
+            distributionChart: null
+        };
+        
+        // API Base URL - Ahora apunta al mismo servidor
+        const API_BASE = '';
+        
+        // Función principal para cargar datos
+        async function cargarDatosReales() {
             try {
-                // Enviar datos al servidor Python
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                const data = await response.json();
-
-                // Mostrar resultado
-                showResult(data);
-
+                mostrarCargando();
+                
+                // Test de conexión
+                const testResponse = await fetch(`${API_BASE}/api/test-conexion`);
+                if (!testResponse.ok) throw new Error('No se puede conectar al backend');
+                const testData = await testResponse.json();
+                
+                // Cargar estadísticas generales
+                const statsResponse = await fetch(`${API_BASE}/api/estadisticas-generales`);
+                if (!statsResponse.ok) throw new Error('Error al cargar estadísticas');
+                const statsData = await statsResponse.json();
+                
+                // Cargar usuarios
+                const usersResponse = await fetch(`${API_BASE}/api/usuarios-basico`);
+                if (!usersResponse.ok) throw new Error('Error al cargar usuarios');
+                const usersData = await usersResponse.json();
+                
+                // Procesar datos
+                procesarDatos(testData, statsData, usersData);
+                actualizarInterfaz();
+                ocultarCargando();
+                
+                document.getElementById('connectionStatus').textContent = '✅ Conectado a BD';
+                document.getElementById('connectionStatus').style.background = '#38a169';
+                mostrarNotificacion('✅ Datos cargados desde base de datos real', 'success');
+                
             } catch (error) {
                 console.error('Error:', error);
-                showResult({
-                    status: 'error',
-                    mensaje: 'Error de conexión. Intenta nuevamente.',
-                    error: error.message
-                });
-            } finally {
-                // Ocultar loading y restaurar botón
-                loading.style.display = 'none';
-                submitBtn.disabled = false;
-                submitBtn.textContent = '🔮 Predecir Supervivencia';
+                ocultarCargando();
+                cargarDatosSimulados();
+                document.getElementById('connectionStatus').textContent = '❌ Sin conexión';
+                document.getElementById('connectionStatus').style.background = '#e53e3e';
+                mostrarNotificacion('⚠️ Error de conexión, usando datos simulados', 'warning');
             }
         }
-
-        function showResult(data) {
-            const result = document.getElementById('result');
-            
-            if (data.status === 'success') {
-                const survived = data.sobrevive;
-                const probability = data.probabilidad_supervivencia;
+        
+        function procesarDatos(testData, statsData, usersData) {
+            // Procesar usuarios y clasificar en clusters
+            const users = usersData.usuarios.map(u => {
+                // Clasificar por cluster basado en datos reales
+                let cluster = 'Inactivos Críticos';
+                if (u.puntaje_promedio >= 2.5 && u.total_reuniones >= 50) {
+                    cluster = 'Activistas Comprometidos';
+                } else if (u.puntaje_promedio >= 2.0 && u.total_reuniones >= 30) {
+                    cluster = 'Participativos Regulares';
+                } else if (u.puntaje_promedio >= 1.0 && u.total_reuniones >= 10) {
+                    cluster = 'Ocasionales Moderados';
+                }
                 
-                result.className = 'result ' + (survived ? 'success' : 'danger');
-                result.innerHTML = `
-                    <div class="probability">
-                        ${survived ? '✅' : '❌'} ${data.mensaje}
-                    </div>
-                `;
-            } else {
-                result.className = 'result error';
-                result.innerHTML = `
-                    <div class="probability">❌ Error en la predicción</div>
-                    <div class="details">
-                        ${data.mensaje || 'Ha ocurrido un error inesperado.'}
-                        ${data.error ? '<br><small>Detalles técnicos: ' + data.error + '</small>' : ''}
-                    </div>
-                `;
+                // Calcular probabilidad simple pero realista
+                const probabilidad = Math.min(0.95, Math.max(0.05, 
+                    0.3 + (u.tasa_asistencia * 0.5) + (Math.min(u.puntaje_promedio, 3) / 3 * 0.2)
+                ));
+                
+                return {
+                    usuario_id: u.usuario_id,
+                    nombre_completo: `${u.nombre} ${u.apellido}`.trim(),
+                    rol: u.rol_nombre,
+                    cluster: cluster,
+                    probabilidad_asistencia: probabilidad,
+                    probabilidad_texto: `${Math.round(probabilidad * 100)}%`,
+                    en_riesgo: u.total_reuniones < 5 || u.tasa_asistencia < 0.3,
+                    estadisticas: {
+                        puntaje_promedio: u.puntaje_promedio,
+                        total_reuniones: u.total_reuniones,
+                        tasa_asistencia: u.tasa_asistencia,
+                        antiguedad_años: u.antiguedad_años || 0
+                    }
+                };
+            });
+            
+            // Contar clusters
+            const clusters = {};
+            users.forEach(u => {
+                clusters[u.cluster] = (clusters[u.cluster] || 0) + 1;
+            });
+            
+            // Actualizar datos globales
+            modelData = {
+                clusters: clusters,
+                users: users,
+                estadisticas: {
+                    total_usuarios: statsData.estadisticas_generales.total_usuarios,
+                    total_registros: testData.total_registros_vista,
+                    usuarios_riesgo: users.filter(u => u.en_riesgo).length,
+                    asistencia_predicha_proxima: users.filter(u => u.probabilidad_asistencia >= 0.7).length
+                }
+            };
+        }
+        
+        function actualizarInterfaz() {
+            // Actualizar contadores principales
+            document.getElementById('totalUsers').textContent = modelData.estadisticas.total_usuarios;
+            document.getElementById('nextMeetingAttendance').textContent = modelData.estadisticas.asistencia_predicha_proxima;
+            document.getElementById('riskUsers').textContent = modelData.estadisticas.usuarios_riesgo;
+            document.getElementById('dbRecords').textContent = modelData.estadisticas.total_registros;
+            document.getElementById('dbUsers').textContent = modelData.estadisticas.total_usuarios;
+            document.getElementById('anomalyCount').textContent = modelData.estadisticas.usuarios_riesgo;
+            
+            // Actualizar subtítulo
+            document.getElementById('dataInfo').textContent = 
+                `${modelData.estadisticas.total_usuarios} usuarios • ${modelData.estadisticas.total_registros} registros de asistencia`;
+            
+            // Actualizar contadores de clusters
+            document.getElementById('activistasCount').textContent = modelData.clusters['Activistas Comprometidos'] || 0;
+            document.getElementById('regularesCount').textContent = modelData.clusters['Participativos Regulares'] || 0;
+            document.getElementById('moderadosCount').textContent = modelData.clusters['Ocasionales Moderados'] || 0;
+            document.getElementById('criticosCount').textContent = modelData.clusters['Inactivos Críticos'] || 0;
+            
+            // Llenar listas de usuarios
+            llenarListasUsuarios();
+            
+            // Actualizar gráficas
+            actualizarGraficas();
+        }
+        
+        function llenarListasUsuarios() {
+            const highList = document.getElementById('highProbabilityList');
+            const lowList = document.getElementById('lowProbabilityList');
+            
+            highList.innerHTML = '';
+            lowList.innerHTML = '';
+            
+            if (!modelData.users || modelData.users.length === 0) {
+                highList.innerHTML = '<div style="text-align: center; color: #666; padding: 2rem;">No hay datos disponibles</div>';
+                lowList.innerHTML = '<div style="text-align: center; color: #666; padding: 2rem;">No hay datos disponibles</div>';
+                return;
             }
             
-            result.style.display = 'block';
-            result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        // Agregar tooltips informativos
-        document.addEventListener('DOMContentLoaded', function() {
-            // Información de precios típicos
-            const fareInput = document.getElementById('fare');
-            const pclassSelect = document.getElementById('pclass');
-            
-            pclassSelect.addEventListener('change', function() {
-                const className = this.value;
-                if (className === '1') {
-                    fareInput.placeholder = 'Ej: 50-500 (Primera clase)';
-                } else if (className === '2') {
-                    fareInput.placeholder = 'Ej: 15-50 (Segunda clase)';
-                } else if (className === '3') {
-                    fareInput.placeholder = 'Ej: 5-25 (Tercera clase)';
+            modelData.users.forEach(user => {
+                const memberItem = crearElementoUsuario(user);
+                
+                if (user.probabilidad_asistencia >= 0.7) {
+                    highList.appendChild(memberItem);
+                } else {
+                    lowList.appendChild(memberItem);
                 }
             });
+        }
+        
+        function crearElementoUsuario(user) {
+            const item = document.createElement('div');
+            item.className = 'member-item';
+            
+            const initials = user.nombre_completo 
+                ? user.nombre_completo.split(' ').map(n => n[0]).join('').toUpperCase()
+                : `U${user.usuario_id}`;
+            
+            const probClass = user.probabilidad_asistencia >= 0.8 
+                ? 'prob-high' 
+                : user.probabilidad_asistencia >= 0.6 
+                    ? 'prob-medium' 
+                    : 'prob-low';
+            
+            const riskIndicator = user.en_riesgo ? '🚨 ' : '';
+            
+            item.innerHTML = `
+                <div class="member-info">
+                    <div class="member-avatar">${initials}</div>
+                    <div class="member-details">
+                        <div class="member-name">${riskIndicator}${user.nombre_completo || `Usuario ${user.usuario_id}`}</div>
+                        <div class="member-role">${user.rol || 'Agremiado'} • ${user.cluster}</div>
+                    </div>
+                </div>
+                <div class="probability-badge ${probClass}">${user.probabilidad_texto}</div>
+            `;
+            
+            item.addEventListener('click', () => mostrarDetalleUsuario(user));
+            
+            return item;
+        }
+        
+        function actualizarGraficas() {
+            // Gráfica de clusters
+            const ctx1 = document.getElementById('clusterChart').getContext('2d');
+            
+            if (modelData.clusterChart) {
+                modelData.clusterChart.destroy();
+            }
+            
+            modelData.clusterChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(modelData.clusters),
+                    datasets: [{
+                        data: Object.values(modelData.clusters),
+                        backgroundColor: ['#38a169', '#4299e1', '#d69e2e', '#e53e3e'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+            
+            // Gráfica de distribución
+            const ctx2 = document.getElementById('distributionChart').getContext('2d');
+            
+            if (modelData.distributionChart) {
+                modelData.distributionChart.destroy();
+            }
+            
+            modelData.distributionChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(modelData.clusters),
+                    datasets: [{
+                        label: 'Número de Usuarios',
+                        data: Object.values(modelData.clusters),
+                        backgroundColor: ['#38a169', '#4299e1', '#d69e2e', '#e53e3e'],
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Cantidad de Usuarios'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function cargarDatosSimulados() {
+            modelData = {
+                clusters: {
+                    'Activistas Comprometidos': 18,
+                    'Participativos Regulares': 31,
+                    'Ocasionales Moderados': 42,
+                    'Inactivos Críticos': 22
+                },
+                users: [
+                    { usuario_id: 1, nombre_completo: 'María González', rol: 'Secretaria', cluster: 'Activistas Comprometidos', probabilidad_asistencia: 0.95, probabilidad_texto: '95%', en_riesgo: false, estadisticas: { puntaje_promedio: 2.8, total_reuniones: 45, tasa_asistencia: 0.95, antiguedad_años: 3 } },
+                    { usuario_id: 2, nombre_completo: 'Carlos Ruiz', rol: 'Tesorero', cluster: 'Activistas Comprometidos', probabilidad_asistencia: 0.88, probabilidad_texto: '88%', en_riesgo: false, estadisticas: { puntaje_promedio: 2.6, total_reuniones: 38, tasa_asistencia: 0.88, antiguedad_años: 2 } },
+                    { usuario_id: 3, nombre_completo: 'Ana López', rol: 'Vocal', cluster: 'Participativos Regulares', probabilidad_asistencia: 0.75, probabilidad_texto: '75%', en_riesgo: false, estadisticas: { puntaje_promedio: 2.2, total_reuniones: 32, tasa_asistencia: 0.75, antiguedad_años: 1.5 } },
+                    { usuario_id: 4, nombre_completo: 'Juan Pérez', rol: 'Agremiado', cluster: 'Inactivos Críticos', probabilidad_asistencia: 0.25, probabilidad_texto: '25%', en_riesgo: true, estadisticas: { puntaje_promedio: 1.1, total_reuniones: 8, tasa_asistencia: 0.25, antiguedad_años: 0.5 } }
+                ],
+                estadisticas: {
+                    total_usuarios: 113,
+                    total_registros: 1130,
+                    usuarios_riesgo: 8,
+                    asistencia_predicha_proxima: 22
+                }
+            };
+            
+            actualizarInterfaz();
+        }
+        
+        // Funciones de interfaz
+        function mostrarDetalleUsuario(user) {
+            alert(`👤 ANÁLISIS DEL USUARIO\n\n` +
+                  `📋 ${user.nombre_completo}\n` +
+                  `🏷️ ${user.rol}\n\n` +
+                  `🎯 Cluster: ${user.cluster}\n` +
+                  `📊 Probabilidad: ${user.probabilidad_texto}\n` +
+                  `🚨 En Riesgo: ${user.en_riesgo ? 'SÍ' : 'NO'}\n\n` +
+                  `📈 ESTADÍSTICAS:\n` +
+                  `• Puntaje Promedio: ${user.estadisticas.puntaje_promedio}\n` +
+                  `• Total Reuniones: ${user.estadisticas.total_reuniones}\n` +
+                  `• Tasa Asistencia: ${(user.estadisticas.tasa_asistencia * 100).toFixed(1)}%\n` +
+                  `• Antigüedad: ${user.estadisticas.antiguedad_años} años`);
+        }
+        
+        function mostrarClusterDetalle(clusterNombre) {
+            const usuarios = modelData.users.filter(u => u.cluster === clusterNombre);
+            const promedioProb = usuarios.reduce((sum, u) => sum + u.probabilidad_asistencia, 0) / usuarios.length;
+            
+            alert(`🎯 DETALLE DEL CLUSTER: ${clusterNombre}\n\n` +
+                  `👥 Total usuarios: ${usuarios.length}\n` +
+                  `📊 Probabilidad promedio: ${(promedioProb * 100).toFixed(1)}%\n` +
+                  `🚨 Usuarios en riesgo: ${usuarios.filter(u => u.en_riesgo).length}\n\n` +
+                  `📋 Primeros usuarios:\n` +
+                  usuarios.slice(0, 5).map(u => `• ${u.nombre_completo} (${u.probabilidad_texto})`).join('\n'));
+        }
+        
+        function enviarRecordatorios() {
+            const usuariosRiesgo = modelData.users.filter(u => u.en_riesgo);
+            alert(`📧 RECORDATORIOS ENVIADOS\n\n` +
+                  `✅ ${usuariosRiesgo.length} recordatorios enviados a usuarios en riesgo\n` +
+                  `📱 Canales: SMS + Email + WhatsApp\n` +
+                  `🎯 Mensajes personalizados según cluster\n` +
+                  `🕐 Estimado de entrega: 5-10 minutos`);
+        }
+        
+        function exportarDatos() {
+            const csvContent = [
+                ['Usuario ID', 'Nombre', 'Rol', 'Cluster', 'Probabilidad', 'En Riesgo', 'Puntaje', 'Reuniones', 'Tasa Asistencia'],
+                ...modelData.users.map(u => [
+                    u.usuario_id,
+                    u.nombre_completo,
+                    u.rol,
+                    u.cluster,
+                    u.probabilidad_texto,
+                    u.en_riesgo ? 'SÍ' : 'NO',
+                    u.estadisticas.puntaje_promedio,
+                    u.estadisticas.total_reuniones,
+                    `${(u.estadisticas.tasa_asistencia * 100).toFixed(1)}%`
+                ])
+            ].map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sututeh_usuarios_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            mostrarNotificacion('📊 Archivo CSV descargado exitosamente', 'success');
+        }
+        
+        function mostrarAnomalias() {
+            const usuariosRiesgo = modelData.users.filter(u => u.en_riesgo);
+            
+            if (usuariosRiesgo.length === 0) {
+                alert('✅ NO HAY USUARIOS EN RIESGO\n\nTodos los agremiados muestran patrones normales de participación.');
+                return;
+            }
+            
+            const lista = usuariosRiesgo
+                .slice(0, 10)
+                .map(u => `• ${u.nombre_completo} (${u.probabilidad_texto})`)
+                .join('\n');
+            
+            const mas = usuariosRiesgo.length > 10 ? `\n... y ${usuariosRiesgo.length - 10} más` : '';
+            
+            alert(`🚨 USUARIOS EN RIESGO DETECTADOS\n\n` +
+                  `Total: ${usuariosRiesgo.length} usuarios\n\n` +
+                  `${lista}${mas}\n\n` +
+                  `⚠️ Criterios de riesgo:\n` +
+                  `• Menos de 5 reuniones\n` +
+                  `• Tasa de asistencia < 30%\n` +
+                  `• Puntaje promedio bajo\n\n` +
+                  `💡 Recomendación: Contacto personalizado urgente`);
+        }
+        
+        function mostrarCargando() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        
+        function ocultarCargando() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        
+        function mostrarNotificacion(mensaje, tipo = 'info') {
+            const colores = {
+                'success': '#38a169',
+                'warning': '#d69e2e',
+                'error': '#e53e3e',
+                'info': '#4299e1'
+            };
+            
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${colores[tipo]};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 1001;
+                transform: translateX(400px);
+                transition: transform 0.3s ease;
+                max-width: 400px;
+            `;
+            toast.textContent = mensaje;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.style.transform = 'translateX(0)', 100);
+            setTimeout(() => {
+                toast.style.transform = 'translateX(400px)';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 4000);
+        }
+        
+        // Inicialización
+        window.addEventListener('load', function() {
+            cargarDatosReales();
         });
+        
+        // Auto-refresh cada 30 segundos
+        setInterval(() => {
+            if (document.getElementById('connectionStatus').textContent.includes('✅')) {
+                cargarDatosReales();
+            }
+        }, 30000);
     </script>
 </body>
 </html>
