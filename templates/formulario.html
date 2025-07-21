@@ -260,8 +260,6 @@
             min-width: 150px;
         }
         
-        .btn-primary { background: #4299e1; color: white; }
-        .btn-success { background: #38a169; color: white; }
         .btn-warning { background: #d69e2e; color: white; }
         .btn:hover { 
             transform: translateY(-2px); 
@@ -481,12 +479,6 @@
             </div>
             
             <div class="action-buttons">
-                <button class="btn btn-primary" onclick="enviarRecordatorios()">
-                    📧 Recordatorios Inteligentes
-                </button>
-                <button class="btn btn-success" onclick="exportarDatos()">
-                    📊 Exportar a CSV
-                </button>
                 <button class="btn btn-warning" onclick="mostrarAnomalias()">
                     🚨 Ver Usuarios en Riesgo
                 </button>
@@ -889,47 +881,6 @@
                   `📋 Primeros usuarios:\n` +
                   usuarios.slice(0, 5).map(u => `• ${u.nombre_completo} (${u.probabilidad_texto})`).join('\n') +
                   (usuarios.length > 5 ? `\n... y ${usuarios.length - 5} más` : ''));
-        }
-        
-        function enviarRecordatorios() {
-            const usuariosRiesgo = modelData.users.filter(u => u.en_riesgo);
-            const dataSource = modelData.usingRealData ? 'base de datos real' : 'datos simulados';
-            
-            alert(`📧 RECORDATORIOS ENVIADOS\n\n` +
-                  `✅ ${usuariosRiesgo.length} recordatorios enviados a usuarios en riesgo\n` +
-                  `📱 Canales: SMS + Email + WhatsApp\n` +
-                  `🎯 Mensajes personalizados según cluster\n` +
-                  `🕐 Estimado de entrega: 5-10 minutos\n\n` +
-                  `📊 Análisis basado en: ${dataSource}`);
-        }
-        
-        function exportarDatos() {
-            const dataSource = modelData.usingRealData ? 'BD_Real' : 'Simulados';
-            const csvContent = [
-                ['Usuario ID', 'Nombre', 'Rol', 'Cluster', 'Probabilidad', 'En Riesgo', 'Puntaje', 'Reuniones', 'Tasa Asistencia', 'Fuente'],
-                ...modelData.users.map(u => [
-                    u.usuario_id,
-                    u.nombre_completo,
-                    u.rol,
-                    u.cluster,
-                    u.probabilidad_texto,
-                    u.en_riesgo ? 'SÍ' : 'NO',
-                    u.estadisticas.puntaje_promedio,
-                    u.estadisticas.total_reuniones,
-                    `${(u.estadisticas.tasa_asistencia * 100).toFixed(1)}%`,
-                    dataSource
-                ])
-            ].map(row => row.join(',')).join('\n');
-            
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `sututeh_usuarios_${dataSource}_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-            
-            mostrarNotificacion('📊 Archivo CSV descargado exitosamente', 'success');
         }
         
         function mostrarAnomalias() {
