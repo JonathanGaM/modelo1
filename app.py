@@ -530,7 +530,48 @@ def api_status():
         'archivos_pkl_requeridos': ['modelo_sututeh.pkl', 'scaler_sututeh.pkl', 'encoders_sututeh.pkl'],
         'timestamp': datetime.now().isoformat()
     })
-
+@app.route('/api/debug-archivos')
+def debug_archivos():
+    """Endpoint para debug de archivos en producción"""
+    try:
+        import os
+        
+        directorio_actual = os.getcwd()
+        archivos_disponibles = os.listdir('.')
+        archivos_pkl = [f for f in archivos_disponibles if f.endswith('.pkl')]
+        
+        info_archivos = []
+        archivos_requeridos = ['modelo_sututeh.pkl', 'scaler_sututeh.pkl', 'encoders_sututeh.pkl']
+        
+        for archivo in archivos_requeridos:
+            existe = os.path.exists(archivo)
+            info = {
+                'nombre': archivo,
+                'existe': existe,
+                'tamaño_bytes': os.path.getsize(archivo) if existe else 0,
+                'ruta_completa': os.path.abspath(archivo) if existe else 'No existe'
+            }
+            info_archivos.append(info)
+        
+        return jsonify({
+            'directorio_actual': directorio_actual,
+            'todos_los_archivos': sorted(archivos_disponibles),
+            'archivos_pkl_encontrados': archivos_pkl,
+            'archivos_requeridos': info_archivos,
+            'variables_entorno': {
+                'PWD': os.getenv('PWD'),
+                'HOME': os.getenv('HOME'),
+                'PATH': os.getenv('PATH')[:200] + '...' if os.getenv('PATH') else None
+            },
+            'python_path': os.sys.path,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'Error en debug: {str(e)}',
+            'tipo_error': str(type(e))
+        }), 500
 # Mantener otros endpoints para compatibilidad (opcional)
 @app.route('/api/test-conexion')
 def test_conexion():
