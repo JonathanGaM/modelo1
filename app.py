@@ -39,90 +39,94 @@ def cargar_modelo_ml():
     global modelo_ml, scaler_ml, encoders_ml
     
     try:
-        print("🔍 DEBUG: Iniciando carga de modelo ML...")
+        print("🔍 DEBUG: Iniciando carga de modelo ML...", flush=True)
         
         # Verificar que los archivos existen antes de cargar
         archivos_requeridos = ['modelo_sututeh.pkl', 'scaler_sututeh.pkl', 'encoders_sututeh.pkl']
         for archivo in archivos_requeridos:
             if not os.path.exists(archivo):
-                print(f"❌ ERROR: Archivo {archivo} no encontrado")
+                print(f"❌ ERROR: Archivo {archivo} no encontrado", flush=True)
                 return False
             else:
-                print(f"✅ Archivo {archivo} encontrado ({os.path.getsize(archivo)} bytes)")
+                print(f"✅ Archivo {archivo} encontrado ({os.path.getsize(archivo)} bytes)", flush=True)
         
         # Cargar modelo principal con debugging detallado
-        print("🔄 Cargando modelo_sututeh.pkl...")
+        print("🔄 Cargando modelo_sututeh.pkl...", flush=True)
         try:
             with open('modelo_sututeh.pkl', 'rb') as f:
                 modelo_ml = pickle.load(f)
-            print("✅ modelo_sututeh.pkl cargado exitosamente")
-            print(f"   Tipo: {type(modelo_ml)}")
+            print("✅ modelo_sututeh.pkl cargado exitosamente", flush=True)
+            print(f"   Tipo: {type(modelo_ml)}", flush=True)
             if isinstance(modelo_ml, dict):
-                print(f"   Keys: {list(modelo_ml.keys())}")
+                print(f"   Keys: {list(modelo_ml.keys())}", flush=True)
         except Exception as e:
-            print(f"❌ ERROR cargando modelo_sututeh.pkl: {e}")
-            print(f"   Tipo de error: {type(e)}")
+            print(f"❌ ERROR cargando modelo_sututeh.pkl: {e}", flush=True)
+            print(f"   Tipo de error: {type(e)}", flush=True)
+            print(f"   Traceback: {traceback.format_exc()}", flush=True)
             return False
         
         # Cargar scaler con debugging
-        print("🔄 Cargando scaler_sututeh.pkl...")
+        print("🔄 Cargando scaler_sututeh.pkl...", flush=True)
         try:
             with open('scaler_sututeh.pkl', 'rb') as f:
                 scaler_ml = pickle.load(f)
-            print("✅ scaler_sututeh.pkl cargado exitosamente")
-            print(f"   Tipo: {type(scaler_ml)}")
+            print("✅ scaler_sututeh.pkl cargado exitosamente", flush=True)
+            print(f"   Tipo: {type(scaler_ml)}", flush=True)
         except Exception as e:
-            print(f"❌ ERROR cargando scaler_sututeh.pkl: {e}")
-            print(f"   Tipo de error: {type(e)}")
+            print(f"❌ ERROR cargando scaler_sututeh.pkl: {e}", flush=True)
+            print(f"   Tipo de error: {type(e)}", flush=True)
+            print(f"   Traceback: {traceback.format_exc()}", flush=True)
             return False
             
         # Cargar encoders con debugging
-        print("🔄 Cargando encoders_sututeh.pkl...")
+        print("🔄 Cargando encoders_sututeh.pkl...", flush=True)
         try:
             with open('encoders_sututeh.pkl', 'rb') as f:
                 encoders_ml = pickle.load(f)
-            print("✅ encoders_sututeh.pkl cargado exitosamente")
-            print(f"   Tipo: {type(encoders_ml)}")
+            print("✅ encoders_sututeh.pkl cargado exitosamente", flush=True)
+            print(f"   Tipo: {type(encoders_ml)}", flush=True)
             if isinstance(encoders_ml, dict):
-                print(f"   Keys: {list(encoders_ml.keys())}")
+                print(f"   Keys: {list(encoders_ml.keys())}", flush=True)
         except Exception as e:
-            print(f"❌ ERROR cargando encoders_sututeh.pkl: {e}")
-            print(f"   Tipo de error: {type(e)}")
+            print(f"❌ ERROR cargando encoders_sututeh.pkl: {e}", flush=True)
+            print(f"   Tipo de error: {type(e)}", flush=True)
+            print(f"   Traceback: {traceback.format_exc()}", flush=True)
             return False
         
         # Verificar estructura del modelo
-        print("🔍 Verificando estructura del modelo...")
+        print("🔍 Verificando estructura del modelo...", flush=True)
         try:
             if not isinstance(modelo_ml, dict):
-                print(f"❌ ERROR: modelo_ml no es un diccionario, es: {type(modelo_ml)}")
+                print(f"❌ ERROR: modelo_ml no es un diccionario, es: {type(modelo_ml)}", flush=True)
                 return False
                 
             if 'metricas' not in modelo_ml:
-                print("❌ ERROR: modelo_ml no tiene clave 'metricas'")
-                print(f"   Keys disponibles: {list(modelo_ml.keys())}")
+                print("❌ ERROR: modelo_ml no tiene clave 'metricas'", flush=True)
+                print(f"   Keys disponibles: {list(modelo_ml.keys())}", flush=True)
                 return False
                 
             if 'metadata' not in modelo_ml:
-                print("❌ ERROR: modelo_ml no tiene clave 'metadata'")
+                print("❌ ERROR: modelo_ml no tiene clave 'metadata'", flush=True)
                 return False
         
-            print("✅ Estructura del modelo verificada")
-            print(f"📊 Precisión del modelo: {modelo_ml['metricas']['roc_auc']:.3f}")
-            print(f"📅 Entrenado el: {modelo_ml['metadata']['fecha_entrenamiento']}")
+            print("✅ Estructura del modelo verificada", flush=True)
+            print(f"📊 Precisión del modelo: {modelo_ml['metricas']['roc_auc']:.3f}", flush=True)
+            print(f"📅 Entrenado el: {modelo_ml['metadata']['fecha_entrenamiento']}", flush=True)
             return True
             
         except KeyError as e:
-            print(f"❌ ERROR: Clave faltante en modelo: {e}")
+            print(f"❌ ERROR: Clave faltante en modelo: {e}", flush=True)
+            print(f"   Keys del modelo: {list(modelo_ml.keys()) if isinstance(modelo_ml, dict) else 'No es dict'}", flush=True)
             return False
         except Exception as e:
-            print(f"❌ ERROR verificando estructura: {e}")
+            print(f"❌ ERROR verificando estructura: {e}", flush=True)
+            print(f"   Traceback: {traceback.format_exc()}", flush=True)
             return False
         
     except Exception as e:
-        print(f"❌ Error general al cargar modelo ML: {e}")
-        print(f"   Tipo de error: {type(e)}")
-        import traceback
-        print(f"   Traceback: {traceback.format_exc()}")
+        print(f"❌ Error general al cargar modelo ML: {e}", flush=True)
+        print(f"   Tipo de error: {type(e)}", flush=True)
+        print(f"   Traceback: {traceback.format_exc()}", flush=True)
         return False
 
 def predecir_asistencia_usuario(usuario_data):
@@ -596,6 +600,7 @@ def api_status():
         'archivos_pkl_requeridos': ['modelo_sututeh.pkl', 'scaler_sututeh.pkl', 'encoders_sututeh.pkl'],
         'timestamp': datetime.now().isoformat()
     })
+
 @app.route('/api/debug-archivos')
 def debug_archivos():
     """Endpoint para debug de archivos en producción"""
@@ -638,6 +643,7 @@ def debug_archivos():
             'error': f'Error en debug: {str(e)}',
             'tipo_error': str(type(e))
         }), 500
+
 # Mantener otros endpoints para compatibilidad (opcional)
 @app.route('/api/test-conexion')
 def test_conexion():
@@ -671,29 +677,41 @@ def test_conexion():
             'timestamp': datetime.now().isoformat()
         }), 500
 
+# =====================================================================
+# CARGAR MODELO AL INICIAR LA APLICACIÓN (FUERA DEL IF __NAME__)
+# ¡¡¡ CRÍTICO: ESTO SE EJECUTA EN PRODUCCIÓN !!!
+# =====================================================================
+
+print("🚀 Iniciando SUTUTEH Backend - MODELO ML OBLIGATORIO...", flush=True)
+print("🤖 Cargando modelo ML OBLIGATORIO...", flush=True)
+
+# 🔥 MOVER ESTA LÍNEA AQUÍ (fuera del if __name__ para que funcione en producción)
+modelo_cargado = cargar_modelo_ml()
+
+if modelo_cargado:
+    print("✅ Sistema ML listo - MODO OPERACIÓN NORMAL", flush=True)
+else:
+    print("❌ SISTEMA ML NO DISPONIBLE - Solo funcionará el endpoint de estado", flush=True)
+    print("💡 Asegúrate de que estos archivos estén en el directorio:", flush=True)
+    print("   - modelo_sututeh.pkl", flush=True)
+    print("   - scaler_sututeh.pkl", flush=True)
+    print("   - encoders_sututeh.pkl", flush=True)
+
+# =====================================================================
+# CONFIGURACIÓN Y EJECUCIÓN (SOLO PARA DESARROLLO LOCAL)
+# En producción (Render) se usa Gunicorn y este bloque se ignora
+# =====================================================================
+
 if __name__ == '__main__':
-    print("🚀 Iniciando SUTUTEH Backend - MODELO ML OBLIGATORIO...")
-    
-    # 🆕 CARGAR MODELO ML OBLIGATORIO
-    print("🤖 Cargando modelo ML OBLIGATORIO...")
-    modelo_cargado = cargar_modelo_ml()
-    
-    if modelo_cargado:
-        print("✅ Sistema ML listo - MODO OPERACIÓN NORMAL")
-    else:
-        print("❌ SISTEMA ML NO DISPONIBLE - Solo funcionará el endpoint de estado")
-        print("💡 Asegúrate de que estos archivos estén en el directorio:")
-        print("   - modelo_sututeh.pkl")
-        print("   - scaler_sututeh.pkl") 
-        print("   - encoders_sututeh.pkl")
+    print("🌐 MODO DESARROLLO LOCAL - Este bloque NO se ejecuta en Render", flush=True)
     
     # Configurar puerto dinámico para Render
     port = int(os.environ.get('PORT', 5000))
-    print(f"🌐 Aplicación web disponible en puerto: {port}")
-    print("🔗 API endpoints disponibles:")
-    print("   /api/status")
-    print("   /api/datos-completos-ml 🆕 (REQUIERE .pkl)")
-    print("   /api/test-conexion")
+    print(f"🌐 Aplicación web disponible en puerto: {port}", flush=True)
+    print("🔗 API endpoints disponibles:", flush=True)
+    print("   /api/status", flush=True)
+    print("   /api/datos-completos-ml 🆕 (REQUIERE .pkl)", flush=True)
+    print("   /api/test-conexion", flush=True)
     
     # Para producción, debug=False
     debug_mode = os.getenv('NODE_ENV') != 'production'
