@@ -8,6 +8,7 @@ import os
 from dotenv import load_dotenv
 import pickle
 import numpy as np
+import traceback
 
 # Cargar variables de entorno solo si existe el archivo .env (desarrollo local)
 if os.path.exists('.env'):
@@ -38,25 +39,90 @@ def cargar_modelo_ml():
     global modelo_ml, scaler_ml, encoders_ml
     
     try:
-        # Cargar modelo principal
-        with open('modelo_sututeh.pkl', 'rb') as f:
-            modelo_ml = pickle.load(f)
+        print("🔍 DEBUG: Iniciando carga de modelo ML...")
         
-        # Cargar scaler
-        with open('scaler_sututeh.pkl', 'rb') as f:
-            scaler_ml = pickle.load(f)
+        # Verificar que los archivos existen antes de cargar
+        archivos_requeridos = ['modelo_sututeh.pkl', 'scaler_sututeh.pkl', 'encoders_sututeh.pkl']
+        for archivo in archivos_requeridos:
+            if not os.path.exists(archivo):
+                print(f"❌ ERROR: Archivo {archivo} no encontrado")
+                return False
+            else:
+                print(f"✅ Archivo {archivo} encontrado ({os.path.getsize(archivo)} bytes)")
+        
+        # Cargar modelo principal con debugging detallado
+        print("🔄 Cargando modelo_sututeh.pkl...")
+        try:
+            with open('modelo_sututeh.pkl', 'rb') as f:
+                modelo_ml = pickle.load(f)
+            print("✅ modelo_sututeh.pkl cargado exitosamente")
+            print(f"   Tipo: {type(modelo_ml)}")
+            if isinstance(modelo_ml, dict):
+                print(f"   Keys: {list(modelo_ml.keys())}")
+        except Exception as e:
+            print(f"❌ ERROR cargando modelo_sututeh.pkl: {e}")
+            print(f"   Tipo de error: {type(e)}")
+            return False
+        
+        # Cargar scaler con debugging
+        print("🔄 Cargando scaler_sututeh.pkl...")
+        try:
+            with open('scaler_sututeh.pkl', 'rb') as f:
+                scaler_ml = pickle.load(f)
+            print("✅ scaler_sututeh.pkl cargado exitosamente")
+            print(f"   Tipo: {type(scaler_ml)}")
+        except Exception as e:
+            print(f"❌ ERROR cargando scaler_sututeh.pkl: {e}")
+            print(f"   Tipo de error: {type(e)}")
+            return False
             
-        # Cargar encoders
-        with open('encoders_sututeh.pkl', 'rb') as f:
-            encoders_ml = pickle.load(f)
+        # Cargar encoders con debugging
+        print("🔄 Cargando encoders_sututeh.pkl...")
+        try:
+            with open('encoders_sututeh.pkl', 'rb') as f:
+                encoders_ml = pickle.load(f)
+            print("✅ encoders_sututeh.pkl cargado exitosamente")
+            print(f"   Tipo: {type(encoders_ml)}")
+            if isinstance(encoders_ml, dict):
+                print(f"   Keys: {list(encoders_ml.keys())}")
+        except Exception as e:
+            print(f"❌ ERROR cargando encoders_sututeh.pkl: {e}")
+            print(f"   Tipo de error: {type(e)}")
+            return False
         
-        print("✅ Modelo ML cargado exitosamente")
-        print(f"📊 Precisión del modelo: {modelo_ml['metricas']['roc_auc']:.3f}")
-        print(f"📅 Entrenado el: {modelo_ml['metadata']['fecha_entrenamiento']}")
-        return True
+        # Verificar estructura del modelo
+        print("🔍 Verificando estructura del modelo...")
+        try:
+            if not isinstance(modelo_ml, dict):
+                print(f"❌ ERROR: modelo_ml no es un diccionario, es: {type(modelo_ml)}")
+                return False
+                
+            if 'metricas' not in modelo_ml:
+                print("❌ ERROR: modelo_ml no tiene clave 'metricas'")
+                print(f"   Keys disponibles: {list(modelo_ml.keys())}")
+                return False
+                
+            if 'metadata' not in modelo_ml:
+                print("❌ ERROR: modelo_ml no tiene clave 'metadata'")
+                return False
+        
+            print("✅ Estructura del modelo verificada")
+            print(f"📊 Precisión del modelo: {modelo_ml['metricas']['roc_auc']:.3f}")
+            print(f"📅 Entrenado el: {modelo_ml['metadata']['fecha_entrenamiento']}")
+            return True
+            
+        except KeyError as e:
+            print(f"❌ ERROR: Clave faltante en modelo: {e}")
+            return False
+        except Exception as e:
+            print(f"❌ ERROR verificando estructura: {e}")
+            return False
         
     except Exception as e:
-        print(f"❌ Error al cargar modelo ML: {e}")
+        print(f"❌ Error general al cargar modelo ML: {e}")
+        print(f"   Tipo de error: {type(e)}")
+        import traceback
+        print(f"   Traceback: {traceback.format_exc()}")
         return False
 
 def predecir_asistencia_usuario(usuario_data):
