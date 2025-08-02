@@ -3,1102 +3,362 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SUTUTEH - Sistema ML con .pkl OBLIGATORIO</title>
+    <title>SUTUTEH - Predicción ML</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
         }
         
         .header {
-            background: rgba(255,255,255,0.95);
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo { font-size: 1.5rem; font-weight: bold; color: #4a5568; }
-        .model-status { 
-            padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; 
-            transition: all 0.3s ease;
-        }
-        
-        .status-ml-active { 
-            background: linear-gradient(135deg, #38a169, #48bb78);
-            color: white;
-            box-shadow: 0 0 15px rgba(56, 161, 105, 0.5);
-            animation: pulse-ml 2s infinite;
-        }
-        
-        .status-ml-error { 
-            background: linear-gradient(135deg, #e53e3e, #f56565);
-            color: white;
-            animation: shake 0.5s ease-in-out;
-        }
-        
-        @keyframes pulse-ml {
-            0% { box-shadow: 0 0 15px rgba(56, 161, 105, 0.5); }
-            50% { box-shadow: 0 0 25px rgba(56, 161, 105, 0.8); }
-            100% { box-shadow: 0 0 15px rgba(56, 161, 105, 0.5); }
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-        
-        .ai-section {
-            background: linear-gradient(135deg, rgba(46, 139, 87, 0.95), rgba(65, 105, 225, 0.95));
-            color: white;
-            padding: 2rem;
-            border-radius: 15px;
-            margin-bottom: 2rem;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
             text-align: center;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
-        .ai-section::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: rotate 10s linear infinite;
-        }
-        
-        @keyframes rotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .ai-title { 
-            font-size: 2rem; 
-            margin-bottom: 0.5rem; 
-            position: relative;
-            z-index: 1;
-        }
-        
-        .ai-subtitle { 
-            opacity: 0.9; 
-            margin-bottom: 1rem; 
-            position: relative;
-            z-index: 1;
-        }
-        
-        .ml-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: rgba(255,255,255,0.2);
-            padding: 0.5rem 1rem;
+        .status {
+            padding: 10px 20px;
             border-radius: 20px;
-            margin: 1rem 0;
-            position: relative;
-            z-index: 1;
+            display: inline-block;
+            margin: 10px;
         }
         
-        .ml-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #38a169;
-            animation: pulse-dot 1.5s infinite;
-        }
+        .status.ok { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
         
-        .ml-dot.error {
-            background: #e53e3e;
-            animation: none;
-        }
-        
-        @keyframes pulse-dot {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.3); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
-        .refresh-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 2px solid rgba(255,255,255,0.3);
-            padding: 0.75rem 2rem;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            margin: 0 0.5rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .refresh-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-        }
-        
-        .refresh-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .stats-overview {
+        .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
         }
         
         .stat-card {
-            background: rgba(255,255,255,0.95);
-            padding: 2rem 1.5rem;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--card-color, #4299e1);
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 35px rgba(0,0,0,0.15);
-        }
-        
-        .stat-card.ml-powered { --card-color: #38a169; }
-        .stat-card.prediction { --card-color: #4299e1; }
-        .stat-card.warning { --card-color: #d69e2e; }
-        .stat-card.critical { --card-color: #e53e3e; }
-        
-        .stat-number { 
-            font-size: 2.5rem; 
-            font-weight: bold; 
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, var(--card-color), #333);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .stat-label { color: #666; font-size: 0.95rem; }
-        .stat-trend { 
-            font-size: 0.8rem; 
-            margin-top: 0.5rem; 
-            opacity: 0.7;
-            font-weight: 600;
-        }
-        
-        .ml-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #38a169;
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: bold;
-        }
-        
-        .main-panel {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        .panel-section {
-            background: rgba(255,255,255,0.95);
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            position: relative;
-        }
-        
-        .section-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-bottom: 1.5rem;
-            color: #2d3748;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .cluster-overview {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .cluster-card {
-            padding: 1.5rem;
+            background: white;
+            padding: 20px;
             border-radius: 10px;
-            color: white;
             text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .usuarios {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .refresh-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            font-size: 16px;
         }
         
-        .cluster-card::before {
-            content: '🤖';
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            font-size: 0.8rem;
-            opacity: 0.7;
+        .refresh-btn:hover {
+            background: #0056b3;
         }
         
-        .cluster-card:hover {
-            transform: scale(1.05) rotate(1deg);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        }
-        
-        .cluster-activistas { background: linear-gradient(135deg, #38a169, #48bb78); }
-        .cluster-regulares { background: linear-gradient(135deg, #4299e1, #63b3ed); }
-        .cluster-moderados { background: linear-gradient(135deg, #d69e2e, #ecc94b); }
-        .cluster-criticos { background: linear-gradient(135deg, #e53e3e, #f56565); }
-        
-        .cluster-count { font-size: 1.8rem; font-weight: bold; }
-        .cluster-name { font-size: 0.9rem; opacity: 0.9; margin-top: 0.5rem; }
-        
-        .error-section {
-            background: linear-gradient(135deg, #e53e3e, #f56565);
-            color: white;
-            padding: 2rem;
-            border-radius: 15px;
+        .loading {
             text-align: center;
-            margin: 2rem 0;
-            box-shadow: 0 8px 25px rgba(229, 62, 62, 0.3);
+            padding: 20px;
+            color: #666;
         }
-        
-        .error-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; }
-        .error-message { opacity: 0.9; margin-bottom: 1.5rem; line-height: 1.6; }
-        
-        .file-list {
-            background: rgba(255,255,255,0.1);
-            padding: 1rem;
-            border-radius: 10px;
-            margin: 1rem 0;
-            text-align: left;
-        }
-        
-        .file-list ul {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .file-list li {
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-        
-        .file-list li:last-child {
-            border-bottom: none;
-        }
-        
-        .members-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-        
-        .members-column {
-            background: rgba(255,255,255,0.95);
-            border-radius: 10px;
-            padding: 1.5rem;
-            position: relative;
-        }
-        
-        .members-column::before {
-            content: '🤖';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 0.8rem;
-            opacity: 0.5;
-        }
-        
-        .column-title {
-            font-weight: bold;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .column-title.high { border-bottom-color: #38a169; color: #38a169; }
-        .column-title.low { border-bottom-color: #e53e3e; color: #e53e3e; }
-        
-        .member-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .member-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            background: #f7fafc;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            position: relative;
-        }
-        
-        .member-item::before {
-            content: '🤖';
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            font-size: 0.6rem;
-            opacity: 0.4;
-        }
-        
-        .member-item:hover {
-            background: #edf2f7;
-            transform: translateX(5px);
-        }
-        
-        .member-info {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        .member-avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4299e1, #63b3ed);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.8rem;
-        }
-        
-        .member-details {
-            flex: 1;
-        }
-        
-        .member-name { font-weight: 600; font-size: 0.9rem; }
-        .member-role { font-size: 0.75rem; color: #666; }
-        
-        .probability-badge {
-            font-weight: bold;
-            padding: 0.25rem 0.75rem;
-            border-radius: 15px;
-            color: white;
-            font-size: 0.8rem;
-            min-width: 50px;
-            text-align: center;
-            position: relative;
-        }
-        
-        .probability-badge::after {
-            content: '🤖';
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            font-size: 0.6rem;
-            opacity: 0.7;
-        }
-        
-        .prob-high { background: #38a169; }
-        .prob-medium { background: #d69e2e; }
-        .prob-low { background: #e53e3e; }
-        
+
         .chart-container {
-            height: 300px;
-            position: relative;
-            margin-top: 1rem;
+            height: 400px;
+            margin: 20px 0;
         }
-        
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            color: white;
-            text-align: center;
+
+        .usuarios-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
-        
-        .loading-content {
-            background: rgba(255,255,255,0.1);
-            padding: 2rem;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
+
+        .usuarios-table th,
+        .usuarios-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
         }
-        
-        .spinner {
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .full-width {
-            grid-column: 1 / -1;
-        }
-        
-        .ml-info-panel {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 2rem;
-            border-radius: 15px;
-            margin-bottom: 2rem;
-        }
-        
-        .ml-metrics {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        
-        .ml-metric {
-            background: rgba(255,255,255,0.1);
-            padding: 1rem;
-            border-radius: 10px;
-            text-align: center;
-        }
-        
-        .ml-metric-value {
-            font-size: 1.5rem;
+
+        .usuarios-table th {
+            background-color: #f8f9fa;
             font-weight: bold;
-            margin-bottom: 0.5rem;
         }
-        
-        .ml-metric-label {
-            font-size: 0.85rem;
-            opacity: 0.9;
+
+        .usuarios-table tr:hover {
+            background-color: #f5f5f5;
         }
-        
-        @media (max-width: 768px) {
-            .main-panel { grid-template-columns: 1fr; }
-            .members-grid { grid-template-columns: 1fr; }
-            .cluster-overview { grid-template-columns: 1fr; }
-            .stats-overview { grid-template-columns: 1fr; }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .badge-asistira {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-no-asistira {
+            background: #f8d7da;
+            color: #721c24;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="logo">🤖 SUTUTEH - Sistema ML Obligatorio</div>
-        <div class="model-status" id="connectionStatus">🔄 Verificando ML...</div>
+        <h1>🤖 SUTUTEH - Predicción de Asistencia</h1>
+        <div id="status">
+            <div class="status" id="statusBadge">🔄 Verificando...</div>
+        </div>
+        <button class="refresh-btn" onclick="cargarDatos()">🔄 Actualizar</button>
     </div>
     
-    <div class="container">
-        <!-- ML Status Section -->
-        <div class="ai-section">
-            <div class="ai-title">🤖 Sistema de Machine Learning con Archivos .pkl</div>
-            <div class="ai-subtitle" id="dataInfo">Verificando disponibilidad del modelo ML...</div>
-            <div class="ml-indicator">
-                <div class="ml-dot" id="mlDot"></div>
-                <span id="mlStatus">Cargando modelo...</span>
-            </div>
-            <button class="refresh-btn" id="refreshBtn" onclick="cargarDatosML(true)">🔄 Actualizar ML</button>
-            <button class="refresh-btn" onclick="verificarEstadoML()">🔍 Verificar .pkl</button>
+    <div class="stats" id="stats" style="display: none;">
+        <div class="stat-card">
+            <div class="stat-number" id="totalUsuarios">0</div>
+            <div>Total Usuarios</div>
         </div>
-        
-        <!-- Error Section (Initially Hidden) -->
-        <div class="error-section" id="errorSection" style="display: none;">
-            <div class="error-title">❌ Sistema ML No Disponible</div>
-            <div class="error-message" id="errorMessage">
-                Los archivos .pkl son requeridos para el funcionamiento del sistema.
-            </div>
-            <div class="file-list">
-                <h4>📁 Archivos Requeridos:</h4>
-                <ul>
-                    <li>📦 modelo_sututeh.pkl - Modelo de machine learning entrenado</li>
-                    <li>⚖️ scaler_sututeh.pkl - Normalizador de características</li>
-                    <li>🔤 encoders_sututeh.pkl - Codificadores categóricos</li>
-                </ul>
-            </div>
-            <button class="refresh-btn" onclick="verificarEstadoML()">🔄 Reintentar</button>
+        <div class="stat-card">
+            <div class="stat-number" id="asistiran">0</div>
+            <div>Asistirán</div>
         </div>
-        
-        <!-- ML Info Panel (Only shown when ML is active) -->
-        <div class="ml-info-panel" id="mlInfoPanel" style="display: none;">
-            <h3>🧠 Información del Modelo de Machine Learning</h3>
-            <div class="ml-metrics">
-                <div class="ml-metric">
-                    <div class="ml-metric-value" id="mlPrecision">0%</div>
-                    <div class="ml-metric-label">Precisión del Modelo</div>
-                </div>
-                <div class="ml-metric">
-                    <div class="ml-metric-value" id="mlFecha">N/A</div>
-                    <div class="ml-metric-label">Fecha de Entrenamiento</div>
-                </div>
-                <div class="ml-metric">
-                    <div class="ml-metric-value" id="mlVersion">N/A</div>
-                    <div class="ml-metric-label">Versión del Modelo</div>
-                </div>
-                <div class="ml-metric">
-                    <div class="ml-metric-value">3</div>
-                    <div class="ml-metric-label">Archivos .pkl Cargados</div>
-                </div>
-            </div>
+        <div class="stat-card">
+            <div class="stat-number" id="noAsistiran">0</div>
+            <div>No Asistirán</div>
         </div>
-        
-        <!-- Stats Overview (Only shown when ML is active) -->
-        <div class="stats-overview" id="statsSection" style="display: none;">
-            <div class="stat-card ml-powered">
-                <div class="ml-badge">ML</div>
-                <div class="stat-number" id="totalUsers">0</div>
-                <div class="stat-label">Usuarios Analizados</div>
-                <div class="stat-trend">Con modelo ML</div>
-            </div>
-            <div class="stat-card prediction">
-                <div class="ml-badge">PRED</div>
-                <div class="stat-number" id="nextMeetingAttendance">0</div>
-                <div class="stat-label">Asistencia Predicha</div>
-                <div class="stat-trend">Probabilidad ≥ 70%</div>
-            </div>
-            <div class="stat-card warning">
-                <div class="ml-badge">RISK</div>
-                <div class="stat-number" id="riskUsers">0</div>
-                <div class="stat-label">Usuarios en Riesgo</div>
-                <div class="stat-trend">Detección ML</div>
-            </div>
-            <div class="stat-card critical">
-                <div class="ml-badge">AVG</div>
-                <div class="stat-number" id="avgProbability">0%</div>
-                <div class="stat-label">Probabilidad Promedio</div>
-                <div class="stat-trend">Global ML</div>
-            </div>
+        <div class="stat-card">
+            <div class="stat-number" id="modeloActivo">❌</div>
+            <div>Modelo ML</div>
         </div>
+    </div>
+    
+    <div class="usuarios" id="clusteringSection" style="display: none;">
+        <h2>📊 Clasificación por Rendimiento</h2>
         
-        <!-- Main Panel - Solo Clustering (Only shown when ML is active) -->
-        <div class="main-panel" id="mainPanel" style="display: none;">
-            <!-- Clustering Results -->
-            <div class="panel-section">
-                <div class="section-title">
-                    🎯 Segmentación con ML
-                </div>
-                
-                <div class="cluster-overview">
-                    <div class="cluster-card cluster-activistas" onclick="mostrarClusterDetalle('Activistas Comprometidos')">
-                        <div class="cluster-count" id="activistasCount">0</div>
-                        <div class="cluster-name">Activistas Comprometidos</div>
-                    </div>
-                    <div class="cluster-card cluster-regulares" onclick="mostrarClusterDetalle('Participativos Regulares')">
-                        <div class="cluster-count" id="regularesCount">0</div>
-                        <div class="cluster-name">Participativos Regulares</div>
-                    </div>
-                    <div class="cluster-card cluster-moderados" onclick="mostrarClusterDetalle('Ocasionales Moderados')">
-                        <div class="cluster-count" id="moderadosCount">0</div>
-                        <div class="cluster-name">Ocasionales Moderados</div>
-                    </div>
-                    <div class="cluster-card cluster-criticos" onclick="mostrarClusterDetalle('Inactivos Críticos')">
-                        <div class="cluster-count" id="criticosCount">0</div>
-                        <div class="cluster-name">Inactivos Críticos</div>
-                    </div>
-                </div>
-                
-                <div class="chart-container">
-                    <canvas id="clusterChart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Members Grid (Only shown when ML is active) -->
-        <div class="panel-section full-width" id="membersSection" style="display: none;">
-            <div class="section-title">
-                👥 Análisis Individual con ML
-            </div>
-            
-            <div class="members-grid">
-                <div class="members-column">
-                    <div class="column-title high">✅ Alta Probabilidad ML</div>
-                    <div class="member-list" id="highProbabilityList">
-                        <div style="text-align: center; color: #666; padding: 2rem;">
-                            Cargando predicciones ML...
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="members-column">
-                    <div class="column-title low">❌ Riesgo Detectado por ML</div>
-                    <div class="member-list" id="lowProbabilityList">
-                        <div style="text-align: center; color: #666; padding: 2rem;">
-                            Cargando análisis de riesgo...
-                        </div>
-                    </div>
-                </div>
+        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h3>📊 Clasificación por Rendimiento</h3>
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">Categorización según sistema de puntajes SUTUTEH</p>
+            <div class="chart-container">
+                <canvas id="categoriaChart"></canvas>
             </div>
         </div>
     </div>
     
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-content">
-            <div class="spinner"></div>
-            <h3>🤖 Procesando con modelo ML...</h3>
-            <p>Cargando archivos .pkl • Ejecutando predicciones</p>
+    <div class="usuarios" id="usuariosSection" style="display: none;">
+        <h2>👥 Todos los Usuarios Analizados</h2>
+        <div id="usuariosList">
+            <div class="loading">Cargando usuarios...</div>
         </div>
     </div>
-    
+
     <script>
-        // Variables globales
-        let modelData = {
-            clusters: {},
-            users: [],
-            estadisticas: {},
-            clusterChart: null,
-            modeloInfo: null,
-            mlActive: false
-        };
+        let datos = null;
+        let datosCluster = null;
+        let categoriaChart = null;
         
-        // API Base URL
-        const API_BASE = '';
-        
-        async function verificarEstadoML() {
+        async function verificarStatus() {
             try {
-                const response = await fetch(`${API_BASE}/api/status`);
+                const response = await fetch('/api/status');
                 const data = await response.json();
                 
-                const mlCompleto = data.modelo_ml?.sistema_ml_completo || false;
-                
-                if (mlCompleto) {
-                    actualizarEstadoML(true, data.modelo_ml);
-                    mostrarNotificacion('✅ Sistema ML verificado exitosamente', 'success');
+                const badge = document.getElementById('statusBadge');
+                if (data.modelo_ml && data.bd_config) {
+                    badge.textContent = '✅ Sistema OK';
+                    badge.className = 'status ok';
+                    return true;
                 } else {
-                    actualizarEstadoML(false, data.modelo_ml);
-                    mostrarError('Sistema ML no disponible', data);
+                    badge.textContent = '❌ Error Sistema';
+                    badge.className = 'status error';
+                    return false;
                 }
-                
-                return mlCompleto;
-                
             } catch (error) {
-                console.error('Error verificando estado ML:', error);
-                actualizarEstadoML(false);
-                mostrarError('Error de conexión con el servidor');
+                const badge = document.getElementById('statusBadge');
+                badge.textContent = '❌ Sin Conexión';
+                badge.className = 'status error';
                 return false;
             }
         }
         
-        async function cargarDatosML(mostrarLoading = true) {
+        async function cargarDatos() {
             try {
-                if (mostrarLoading) mostrarCargando();
+                document.getElementById('statusBadge').textContent = '🔄 Cargando...';
                 
-                // 🤖 INTENTAR CARGAR DATOS CON ML OBLIGATORIO
-                const response = await fetch(`${API_BASE}/api/datos-completos-ml`);
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Error en la respuesta del servidor');
-                }
-                
+                // Cargar datos básicos
+                const response = await fetch('/api/datos');
                 const data = await response.json();
                 
-                if (!data.success) {
-                    throw new Error(data.error || 'Respuesta no exitosa del servidor');
-                }
+                // Cargar datos de clustering
+                const responseCluster = await fetch('/api/clustering');
+                const dataCluster = await responseCluster.json();
                 
-                // ✅ ÉXITO: Procesar datos ML
-                procesarDatosML(data);
-                actualizarInterfazML();
-                modelData.mlActive = true;
-                
-                if (mostrarLoading) ocultarCargando();
-                
-                actualizarEstadoML(true, data.modelo_info);
-                if (mostrarLoading) {
-                    mostrarNotificacion('🤖 Datos cargados con modelo ML exitosamente', 'success');
+                if (data.success && dataCluster.success) {
+                    datos = data;
+                    datosCluster = dataCluster;
+                    mostrarDatos();
+                    mostrarClustering();
+                } else {
+                    mostrarError(data.error || dataCluster.error);
                 }
                 
             } catch (error) {
-                console.error('Error cargando datos ML:', error);
-                if (mostrarLoading) ocultarCargando();
-                
-                modelData.mlActive = false;
-                actualizarEstadoML(false);
-                mostrarError('Error al cargar datos con modelo ML', { error: error.message });
-                
-                if (mostrarLoading) {
-                    mostrarNotificacion(`❌ Error: ${error.message}`, 'error');
-                }
+                mostrarError('Error de conexión: ' + error.message);
             }
         }
         
-        function procesarDatosML(data) {
-            // Procesar usuarios con datos ML
-            modelData.users = data.usuarios;
-            modelData.clusters = data.clusters;
-            modelData.estadisticas = data.estadisticas_simples;
-            modelData.estadisticasAvanzadas = data.estadisticas_avanzadas;
-            modelData.modeloInfo = data.modelo_info;
-        }
-        
-        function actualizarInterfazML() {
-            if (!modelData.mlActive) return;
+        function mostrarDatos() {
+            if (!datos) return;
             
-            // Mostrar todas las secciones ML
-            document.getElementById('mlInfoPanel').style.display = 'block';
-            document.getElementById('statsSection').style.display = 'grid';
-            document.getElementById('mainPanel').style.display = 'grid';
-            document.getElementById('membersSection').style.display = 'block';
-            document.getElementById('errorSection').style.display = 'none';
+            // Mostrar secciones
+            document.getElementById('stats').style.display = 'grid';
+            document.getElementById('clusteringSection').style.display = 'block';
+            document.getElementById('usuariosSection').style.display = 'block';
             
-            // Actualizar información del modelo
-            if (modelData.modeloInfo) {
-                document.getElementById('mlPrecision').textContent = 
-                    `${(modelData.modeloInfo.precision * 100).toFixed(1)}%`;
-                document.getElementById('mlFecha').textContent = 
-                    modelData.modeloInfo.fecha_entrenamiento || 'N/A';
-                document.getElementById('mlVersion').textContent = 
-                    modelData.modeloInfo.version || '1.0';
-            }
+            // Calcular predicciones simplificadas
+            const asistiran = datos.usuarios.filter(u => !u.en_riesgo).length;
+            const noAsistiran = datos.usuarios.filter(u => u.en_riesgo).length;
             
-            // Actualizar contadores principales
-            document.getElementById('totalUsers').textContent = modelData.estadisticas.total_usuarios;
-            document.getElementById('nextMeetingAttendance').textContent = modelData.estadisticas.asistencia_predicha_proxima;
-            document.getElementById('riskUsers').textContent = modelData.estadisticas.usuarios_riesgo;
+            // Actualizar stats
+            document.getElementById('totalUsuarios').textContent = datos.total;
+            document.getElementById('asistiran').textContent = asistiran;
+            document.getElementById('noAsistiran').textContent = noAsistiran;
+            document.getElementById('modeloActivo').textContent = datos.modelo_activo ? '✅' : '❌';
             
-            // Calcular probabilidad promedio
-            const promedioProb = modelData.estadisticasAvanzadas?.promedio_probabilidad_global || 0;
-            document.getElementById('avgProbability').textContent = `${(promedioProb * 100).toFixed(0)}%`;
+            // Mostrar usuarios en DOS COLUMNAS separadas
+            const lista = document.getElementById('usuariosList');
+            lista.innerHTML = '';
             
-            // Actualizar contadores de clusters
-            document.getElementById('activistasCount').textContent = modelData.clusters['Activistas Comprometidos'] || 0;
-            document.getElementById('regularesCount').textContent = modelData.clusters['Participativos Regulares'] || 0;
-            document.getElementById('moderadosCount').textContent = modelData.clusters['Ocasionales Moderados'] || 0;
-            document.getElementById('criticosCount').textContent = modelData.clusters['Inactivos Críticos'] || 0;
+            // Separar usuarios por predicción
+            const usuariosAsistiran = datos.usuarios.filter(u => !u.en_riesgo);
+            const usuariosNoAsistiran = datos.usuarios.filter(u => u.en_riesgo);
             
-            // Actualizar información principal
-            document.getElementById('dataInfo').textContent = 
-                `${modelData.estadisticas.total_usuarios} usuarios procesados con modelo ML`;
+            // Crear contenedor de dos columnas
+            const contenedorColumnas = document.createElement('div');
+            contenedorColumnas.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 20px;';
             
-            // Llenar listas de usuarios
-            llenarListasUsuariosML();
-            
-            // Actualizar solo la gráfica de clusters
-            actualizarGraficaClusters();
-        }
-        
-        function llenarListasUsuariosML() {
-            const highList = document.getElementById('highProbabilityList');
-            const lowList = document.getElementById('lowProbabilityList');
-            
-            highList.innerHTML = '';
-            lowList.innerHTML = '';
-            
-            if (!modelData.users || modelData.users.length === 0) {
-                highList.innerHTML = '<div style="text-align: center; color: #666; padding: 2rem;">No hay datos ML disponibles</div>';
-                lowList.innerHTML = '<div style="text-align: center; color: #666; padding: 2rem;">No hay datos ML disponibles</div>';
-                return;
-            }
-            
-            // Ordenar usuarios por probabilidad (todos vienen del modelo ML)
-            const sortedUsers = [...modelData.users].sort((a, b) => b.probabilidad_asistencia - a.probabilidad_asistencia);
-            
-            sortedUsers.forEach(user => {
-                const memberItem = crearElementoUsuarioML(user);
-                
-                if (user.probabilidad_asistencia >= 0.7) {
-                    highList.appendChild(memberItem);
-                } else {
-                    lowList.appendChild(memberItem);
-                }
-            });
-            
-            // Si alguna lista está vacía, mostrar mensaje
-            if (highList.children.length === 0) {
-                highList.innerHTML = '<div style="text-align: center; color: #666; padding: 1rem;">No hay usuarios con alta probabilidad</div>';
-            }
-            if (lowList.children.length === 0) {
-                lowList.innerHTML = '<div style="text-align: center; color: #666; padding: 1rem;">Todos los usuarios tienen alta probabilidad ML</div>';
-            }
-        }
-        
-        function crearElementoUsuarioML(user) {
-            const item = document.createElement('div');
-            item.className = 'member-item';
-            
-            const initials = user.nombre_completo 
-                ? user.nombre_completo.split(' ').map(n => n[0]).join('').toUpperCase()
-                : `U${user.usuario_id}`;
-            
-            const probClass = user.probabilidad_asistencia >= 0.8 
-                ? 'prob-high' 
-                : user.probabilidad_asistencia >= 0.6 
-                    ? 'prob-medium' 
-                    : 'prob-low';
-            
-            const riskIndicator = user.en_riesgo ? '🚨 ' : '';
-            const mlIndicator = '🤖 '; // Todos los usuarios usan ML
-            
-            item.innerHTML = `
-                <div class="member-info">
-                    <div class="member-avatar">${initials}</div>
-                    <div class="member-details">
-                        <div class="member-name">${riskIndicator}${mlIndicator}${user.nombre_completo || `Usuario ${user.usuario_id}`}</div>
-                        <div class="member-role">${user.rol || 'Agremiado'} • ${user.cluster}</div>
-                    </div>
-                </div>
-                <div class="probability-badge ${probClass}">${user.probabilidad_texto}</div>
+            // COLUMNA 1: Usuarios que SÍ asistirán
+            const columnaAsistiran = document.createElement('div');
+            columnaAsistiran.style.cssText = 'background: #f0fff4; padding: 20px; border-radius: 10px; border: 2px solid #28a745;';
+            columnaAsistiran.innerHTML = `
+                <h3 style="color: #28a745; text-align: center; margin-top: 0;">✅ Asistirán (${usuariosAsistiran.length})</h3>
             `;
             
-            item.addEventListener('click', () => mostrarDetalleUsuarioML(user));
-            
-            return item;
-        }
-        
-        function actualizarGraficaClusters() {
-            // 🎯 Solo gráfica de clusters
-            const ctx1 = document.getElementById('clusterChart').getContext('2d');
-            
-            if (modelData.clusterChart) {
-                modelData.clusterChart.destroy();
-            }
-            
-            const clusterKeys = Object.keys(modelData.clusters);
-            const colores = clusterKeys.map(cluster => {
-                switch(cluster) {
-                    case 'Activistas Comprometidos': return '#38a169';
-                    case 'Participativos Regulares': return '#4299e1';
-                    case 'Ocasionales Moderados': return '#d69e2e';
-                    case 'Inactivos Críticos': return '#e53e3e';
-                    default: return '#718096';
-                }
+            usuariosAsistiran.forEach(usuario => {
+                const userDiv = document.createElement('div');
+                userDiv.style.cssText = 'padding: 8px; margin: 5px 0; background: white; border-radius: 5px; border-left: 4px solid #28a745;';
+                userDiv.innerHTML = `<strong>${usuario.nombre}</strong>`;
+                columnaAsistiran.appendChild(userDiv);
             });
             
-            modelData.clusterChart = new Chart(ctx1, {
-                type: 'doughnut',
+            // COLUMNA 2: Usuarios que NO asistirán
+            const columnaNoAsistiran = document.createElement('div');
+            columnaNoAsistiran.style.cssText = 'background: #fff5f5; padding: 20px; border-radius: 10px; border: 2px solid #dc3545;';
+            columnaNoAsistiran.innerHTML = `
+                <h3 style="color: #dc3545; text-align: center; margin-top: 0;">❌ No Asistirán (${usuariosNoAsistiran.length})</h3>
+            `;
+            
+            usuariosNoAsistiran.forEach(usuario => {
+                const userDiv = document.createElement('div');
+                userDiv.style.cssText = 'padding: 8px; margin: 5px 0; background: white; border-radius: 5px; border-left: 4px solid #dc3545;';
+                userDiv.innerHTML = `<strong>${usuario.nombre}</strong>`;
+                columnaNoAsistiran.appendChild(userDiv);
+            });
+            
+            // Agregar columnas al contenedor
+            contenedorColumnas.appendChild(columnaAsistiran);
+            contenedorColumnas.appendChild(columnaNoAsistiran);
+            
+            // Agregar al DOM
+            lista.appendChild(contenedorColumnas);
+            
+            document.getElementById('statusBadge').textContent = '✅ Datos Cargados';
+            document.getElementById('statusBadge').className = 'status ok';
+        }
+        
+        function mostrarClustering() {
+            if (!datosCluster) return;
+            
+            // Solo crear gráfica de categorías (sistema de puntajes)
+            const ctxCategoria = document.getElementById('categoriaChart').getContext('2d');
+            
+            if (categoriaChart) {
+                categoriaChart.destroy();
+            }
+            
+            categoriaChart = new Chart(ctxCategoria, {
+                type: 'pie',
                 data: {
-                    labels: clusterKeys.map(k => k + ' (ML)'),
+                    labels: ['🟢 Excelente', '🔵 Bueno', '🟡 Regular', '🔴 Deficiente'],
                     datasets: [{
-                        data: Object.values(modelData.clusters),
-                        backgroundColor: colores,
-                        borderWidth: 0
+                        data: [
+                            datosCluster.distribucion_categorias.EXCELENTE,
+                            datosCluster.distribucion_categorias.BUENO,
+                            datosCluster.distribucion_categorias.REGULAR,
+                            datosCluster.distribucion_categorias.DEFICIENTE
+                        ],
+                        backgroundColor: ['#28a745', '#007bff', '#ffc107', '#dc3545'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom' },
-                        title: {
-                            display: true,
-                            text: '🤖 Clusters generados por ML'
-                        }
+                        legend: { position: 'bottom' }
                     }
                 }
             });
         }
         
-        function actualizarEstadoML(activo, modeloInfo = null) {
-            const status = document.getElementById('connectionStatus');
-            const dot = document.getElementById('mlDot');
-            const mlStatus = document.getElementById('mlStatus');
-            const refreshBtn = document.getElementById('refreshBtn');
+        function mostrarError(mensaje) {
+            document.getElementById('statusBadge').textContent = '❌ Error';
+            document.getElementById('statusBadge').className = 'status error';
             
-            if (activo) {
-                status.textContent = '🤖 ML Activo';
-                status.className = 'model-status status-ml-active';
-                dot.className = 'ml-dot';
-                mlStatus.textContent = `ML operativo • ${new Date().toLocaleTimeString()}`;
-                refreshBtn.disabled = false;
-                
-                modelData.mlActive = true;
-            } else {
-                status.textContent = '❌ ML No Disponible';
-                status.className = 'model-status status-ml-error';
-                dot.className = 'ml-dot error';
-                mlStatus.textContent = `Error ML • ${new Date().toLocaleTimeString()}`;
-                refreshBtn.disabled = true;
-                
-                modelData.mlActive = false;
-            }
-        }
-        
-        function mostrarError(titulo, detalles = null) {
-            const errorSection = document.getElementById('errorSection');
-            const errorMessage = document.getElementById('errorMessage');
-            
-            // Ocultar secciones ML
-            document.getElementById('mlInfoPanel').style.display = 'none';
-            document.getElementById('statsSection').style.display = 'none';
-            document.getElementById('mainPanel').style.display = 'none';
-            document.getElementById('membersSection').style.display = 'none';
-            
-            // Mostrar error
-            errorSection.style.display = 'block';
-            
-            let mensaje = titulo;
-            if (detalles) {
-                if (detalles.archivos_requeridos) {
-                    mensaje += '\n\nArchivos faltantes: ' + detalles.archivos_requeridos.join(', ');
-                }
-                if (detalles.error) {
-                    mensaje += '\n\nDetalle: ' + detalles.error;
-                }
-            }
-            
-            errorMessage.textContent = mensaje;
-            
-            // Actualizar información principal
-            document.getElementById('dataInfo').textContent = 'Sistema ML no disponible - Archivos .pkl requeridos';
-        }
-        
-        function mostrarDetalleUsuarioML(user) {
-            const mlInfo = modelData.modeloInfo;
-            const precision = mlInfo ? (mlInfo.precision * 100).toFixed(1) : 'N/A';
-            
-            alert(`🤖 ANÁLISIS ML DEL USUARIO\n\n` +
-                  `📋 ${user.nombre_completo}\n` +
-                  `🏷️ ${user.rol}\n\n` +
-                  `🎯 Cluster ML: ${user.cluster}\n` +
-                  `📊 Probabilidad ML: ${user.probabilidad_texto}\n` +
-                  `🚨 Riesgo Detectado: ${user.en_riesgo ? 'SÍ' : 'NO'}\n\n` +
-                  `📈 ESTADÍSTICAS:\n` +
-                  `• Puntaje Promedio: ${user.estadisticas.puntaje_promedio}\n` +
-                  `• Total Reuniones: ${user.estadisticas.total_reuniones}\n` +
-                  `• Tasa Asistencia: ${(user.estadisticas.tasa_asistencia * 100).toFixed(1)}%\n` +
-                  `• Antigüedad: ${user.estadisticas.antiguedad_años} años\n\n` +
-                  `🤖 MODELO ML:\n` +
-                  `• Precisión: ${precision}%\n` +
-                  `• Archivos: modelo_sututeh.pkl, scaler_sututeh.pkl, encoders_sututeh.pkl\n` +
-                  `• Predicción generada con machine learning entrenado`);
-        }
-        
-        function mostrarClusterDetalle(clusterNombre) {
-            const usuarios = modelData.users.filter(u => u.cluster === clusterNombre);
-            const promedioProb = usuarios.length > 0 ? usuarios.reduce((sum, u) => sum + u.probabilidad_asistencia, 0) / usuarios.length : 0;
-            const precision = modelData.modeloInfo ? (modelData.modeloInfo.precision * 100).toFixed(1) : 'N/A';
-            
-            alert(`🎯 CLUSTER ML: ${clusterNombre}\n\n` +
-                  `👥 Total usuarios: ${usuarios.length}\n` +
-                  `📊 Probabilidad promedio ML: ${(promedioProb * 100).toFixed(1)}%\n` +
-                  `🚨 Usuarios en riesgo: ${usuarios.filter(u => u.en_riesgo).length}\n\n` +
-                  `🤖 INFORMACIÓN ML:\n` +
-                  `• Cluster generado por modelo entrenado\n` +
-                  `• Precisión del modelo: ${precision}%\n` +
-                  `• Archivos .pkl utilizados\n\n` +
-                  `📋 Primeros usuarios:\n` +
-                  usuarios.slice(0, 5).map(u => `• ${u.nombre_completo} (${u.probabilidad_texto})`).join('\n') +
-                  (usuarios.length > 5 ? `\n... y ${usuarios.length - 5} más` : ''));
-        }
-        
-        function mostrarCargando() {
-            document.getElementById('loadingOverlay').style.display = 'flex';
-        }
-        
-        function ocultarCargando() {
-            document.getElementById('loadingOverlay').style.display = 'none';
-        }
-        
-        function mostrarNotificacion(mensaje, tipo = 'info') {
-            const colores = {
-                'success': '#38a169',
-                'warning': '#d69e2e',
-                'error': '#e53e3e',
-                'info': '#4299e1'
-            };
-            
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${colores[tipo]};
-                color: white;
-                padding: 1rem 1.5rem;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                z-index: 1001;
-                transform: translateX(400px);
-                transition: transform 0.3s ease;
-                max-width: 400px;
-                font-size: 0.9rem;
+            document.getElementById('usuariosList').innerHTML = `
+                <div style="color: red; text-align: center; padding: 20px;">
+                    Error: ${mensaje}
+                </div>
             `;
-            toast.textContent = mensaje;
-            
-            document.body.appendChild(toast);
-            
-            setTimeout(() => toast.style.transform = 'translateX(0)', 100);
-            setTimeout(() => {
-                toast.style.transform = 'translateX(400px)';
-                setTimeout(() => {
-                    if (document.body.contains(toast)) {
-                        document.body.removeChild(toast);
-                    }
-                }, 300);
-            }, 4000);
         }
         
-        // Inicialización
-        window.addEventListener('load', function() {
-            console.log('🚀 SUTUTEH Sistema ML Obligatorio iniciado');
-            
-            // Verificar estado ML primero
-            verificarEstadoML().then(mlDisponible => {
-                if (mlDisponible) {
-                    // Si ML está disponible, cargar datos
-                    cargarDatosML();
-                } else {
-                    // Si no está disponible, mostrar error
-                    mostrarError('Modelo ML no disponible');
-                    
+        // Inicializar
+        window.onload = function() {
+            verificarStatus().then(ok => {
+                if (ok) {
+                    cargarDatos();
                 }
             });
-        });
+        };
         
-        // Auto-refresh cada 5 minutos si ML está activo
+        // Auto-refresh cada 30 segundos
         setInterval(() => {
-            if (modelData.mlActive) {
-                cargarDatosML(false); // Sin mostrar loading
+            if (datos) {
+                cargarDatos();
             }
-        }, 300000); // 5 minutos
+        }, 30000);
     </script>
 </body>
 </html>
